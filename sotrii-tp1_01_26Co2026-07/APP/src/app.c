@@ -144,6 +144,8 @@ void app_init(void)
      * is stored in variable pxCurrentTCB */
 
     /* I2C Device Diver Init */
+    // Init periferico en MX_I2C1_Init
+    // Crea tarea emisora y receptora task_i2c_tx task_i2c_rx
     open_i2c(&hi2c1);
 
     /* Application Interrupts Init */

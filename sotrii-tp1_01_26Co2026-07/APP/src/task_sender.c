@@ -45,6 +45,7 @@
 #include "board.h"
 #include "app.h"
 #include "task_i2c_interface.h"
+#include "adxl345_data.h"
 
 /********************** macros and definitions *******************************/
 #define G_TASK_SENDER_CNT_INI	0ul
@@ -58,7 +59,7 @@
 
 /********************** internal data definition *****************************/
 const char *p_task_sender_wait_250mS		= "   ==> Task SENDER - Wait:   250mS";
-
+static adxl345_dta_t adxl345_data = {0};
 /********************** external data declaration ****************************/
 uint32_t g_task_sender_cnt;
 
@@ -69,13 +70,32 @@ void task_sender(void *parameters)
 	/*  Declare & Initialize Task Function variables */
 	g_task_sender_cnt = G_TASK_SENDER_CNT_INI;
 
-	/* Serial LCD I2C Module–PCF8574
+	/* Serial LCD I2C Module–PCF8574  -> DEPRECATED 
+	 * No tengo ese IC -> Se usa el acelerometro digital de 3 ejes (X, Y, Z)
 	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
 	 * https://www.ti.com/product/PCF8574
  	 * dev_address = (address base | jumper less address)
+	 * -------------------------------------------------------------------------------------
+	 * Acelerometro digital de 3 ejes (X, Y, Z)
+	 * Link: https://www.analog.com/media/en/technical-documentation/data-sheets/adxl345.pdf
+	 * Funcionamiento simple:
+	 * Configurar el registro de Power CTL en:
+	 * Table 26. Register 0x2D:  
+	 * - Bit 3: Measure = 1  -> ESTE!
+	 * - Bit 2: Self Test = 0
+	 * - Bit 1: Interrupt = 0
+	 * - Bit 0: Link = 0
+	 * Data en: 0x08; // Activa el bit "Measure"
+	 * Una vez activada: data in the DATAX, DATAY, and DATAZ registers (Address 0x32 to Address 0x37).
+	 * leer los datos de los registros de datos (X, Y, Z)
+	 * Table 3. Register 0x32 a 0x37:
+	 * - 16 bits: X data, Y data, Z data  (Data 0 y Data 1 de cada eje)
  	 */
-	uint16_t dev_address = 0x27;
-	uint8_t dev_data = 0x55;
+	
+	adxl345_data.i2c_addr = ADXL345_ADDRESS_SHIFTED;
+	adxl345_data.initialized = false;
+	adxl345_data.is_valid_sample = false;
+	LOGGER_INFO("adxl345 INICIADO");
 
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
@@ -88,8 +108,13 @@ void task_sender(void *parameters)
 		g_task_sender_cnt++;
 
 		/* I2C Device Diver Write */
-		dev_data = ~dev_data;
-		write_i2c(&hi2c1, dev_address, dev_data);
+		if(adxl345_data.initialized == false){
+			// Mandar solo al registro power
+		}else{
+			// leer la data desde el registro de X1 con length 6
+
+		}
+
 
     	/* Print out: Wait 250mS */
 		LOGGER_INFO(p_task_sender_wait_250mS);

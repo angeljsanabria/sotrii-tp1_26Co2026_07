@@ -45,6 +45,26 @@ extern "C" {
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
+// Config
+#define I2C_IN_BUFFER_MAX  		16		// para buffer de lectura
+typedef enum
+{
+    I2C_MODE_POLLING = 0,
+//    I2C_MODE_INTERRUPT,
+//    I2C_MODE_DMA,
+    I2C_MODE_NOT_SUPPORTED,
+} i2c_mode_hal_driver_t;
+
+//Synchronous , Asynchronous , Latest Input Only
+typedef enum
+{
+    I2C_PATTERN_SYNC = 0,
+//    I2C_PATTERN_ASYNC,
+//    I2C_PATERN_LASTEST_INPUT_ONLY,
+    I2C_PATTERN_NOT_SUPPORTED,
+} i2c_pattern_driver_t;
+
+
 /* Structure of Task */
 typedef struct
 {
@@ -55,14 +75,27 @@ typedef struct
 
 	TaskHandle_t		task_rx;
 	QueueHandle_t		queue_rx;
+
+	i2c_mode_hal_driver_t 	mode_use;
+	i2c_pattern_driver_t 	pattern_use;			// Patron de diseño seleccionado
 } task_i2c_dta_t;
 
 /* Structure of I2C Tx */
+//typedef struct
+//{
+//	uint16_t	address;
+//	uint8_t		data;
+//} task_i2c_tx_dta_t;
+
+/* Structure of I2C Rx y Tx */
 typedef struct
 {
 	uint16_t	address;
-	uint8_t		data;
-} task_i2c_tx_dta_t;
+	uint8_t		read_add;
+	uint8_t		len;
+	uint8_t     buffer[I2C_IN_BUFFER_MAX];
+} task_i2c_tx_rx_dta_t;
+
 
 /********************** external data declaration ****************************/
 

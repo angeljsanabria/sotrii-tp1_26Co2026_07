@@ -99,13 +99,20 @@ void task_i2c_tx(void *parameters)
 		/* Update Task Counter */
 		g_task_xxxx_tx_cnt++;
 
-		task_i2c_tx_dta_t task_i2c_tx_dta;
+		task_i2c_tx_rx_dta_t task_i2c_tx_dta;
 
 		cycle_counter_reset();
 
 		xQueueReceive(p_task_i2c_tx_dta->queue_tx, &task_i2c_tx_dta, portMAX_DELAY);
 
-		HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.data, sizeof(task_i2c_tx_dta.data), HAL_MAX_DELAY);
+
+		if(p_task_i2c_tx_dta->mode_use == I2C_MODE_POLLING){
+
+		}else{
+			HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.buffer[0], task_i2c_tx_dta.len, HAL_MAX_DELAY);
+			LOGGER_ERROR("I2C Patron error");
+		}
+
 
 		g_task_xxxx_tx_runtime_us = cycle_counter_get_time_us();
 

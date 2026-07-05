@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 /********************** inclusions *******************************************/
-
+#include "task_i2c_attribute.h"
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
@@ -49,10 +49,11 @@ extern "C" {
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
-extern void open_i2c(I2C_HandleTypeDef *h_i2c_device);
+void open_i2c(I2C_HandleTypeDef *h_i2c_device, i2c_mode_hal_driver_t set_mode, i2c_pattern_driver_t set_pattern);
 extern void release_i2c(I2C_HandleTypeDef *h_i2c_device);
 
-extern void write_i2c(I2C_HandleTypeDef *h_i2c_device, uint16_t address, uint8_t data);
+//extern void write_i2c(I2C_HandleTypeDef *h_i2c_device, uint16_t address, uint8_t data);
+extern void write_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *tx_data);
 extern void read_i2c(I2C_HandleTypeDef *h_i2c_device);
 
 extern void ioctl_i2c(I2C_HandleTypeDef *h_i2c_device);

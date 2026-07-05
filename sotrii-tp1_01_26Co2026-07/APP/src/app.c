@@ -146,7 +146,10 @@ void app_init(void)
     /* I2C Device Diver Init */
     // Init periferico en MX_I2C1_Init
     // Crea tarea emisora y receptora task_i2c_tx task_i2c_rx
-    open_i2c(&hi2c1);
+    // El hi2c1 se va a usar para las lecturas de los ejes x,y,z del
+    // acelerometro ADXL345; En modo polling con el patron SYNC.
+    open_i2c(&hi2c1, I2C_MODE_POLLING, I2C_PATTERN_SYNC);
+
 
     /* Application Interrupts Init */
 	app_it_init();

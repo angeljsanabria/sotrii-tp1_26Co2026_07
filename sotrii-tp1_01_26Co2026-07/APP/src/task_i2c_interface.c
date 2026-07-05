@@ -48,6 +48,7 @@
 #include "task_i2c.h"
 #include "task_i2c_attribute.h"
 #include "task_i2c_interface.h"
+#include "logger.h"
 
 /********************** macros and definitions *******************************/
 
@@ -64,21 +65,29 @@ task_i2c_dta_t task_i2c_dta;
 
 /********************** external functions definition ************************/
 /* Interface functions */
-void open_i2c(I2C_HandleTypeDef *h_i2c_device)
+void open_i2c(I2C_HandleTypeDef *h_i2c_device, i2c_mode_hal_driver_t set_mode, i2c_pattern_driver_t set_pattern)
 {
 	BaseType_t ret;
 	task_i2c_dta_t *p_task_i2c_dta = &task_i2c_dta;
 
 	p_task_i2c_dta->device_id = h_i2c_device;
 
+	// set modo
+	configASSERT(I2C_MODE_NOT_SUPPORTED >= set_mode);
+	p_task_i2c_dta->mode_use = set_mode;
+
+	// set patron
+	configASSERT(I2C_PATTERN_NOT_SUPPORTED >= set_pattern);
+	p_task_i2c_dta->pattern_use = set_pattern;
+
     /* Before a queue is used it must be explicitly created.
 	 * Check the queue was created successfully.
      * Add queue to registry. */
-	p_task_i2c_dta->queue_tx = xQueueCreate(5, sizeof(task_i2c_tx_dta_t));
+	p_task_i2c_dta->queue_tx = xQueueCreate(5, sizeof(task_i2c_tx_rx_dta_t));
 	configASSERT(NULL != p_task_i2c_dta->queue_tx);
 	vQueueAddToRegistry(p_task_i2c_dta->queue_tx, "Task I2C Tx Queue Handle");
 
-	p_task_i2c_dta->queue_rx = xQueueCreate(10, sizeof(uint8_t));
+	p_task_i2c_dta->queue_rx = xQueueCreate(10, sizeof(task_i2c_tx_rx_dta_t));
 	configASSERT(NULL != p_task_i2c_dta->queue_rx);
 	vQueueAddToRegistry(p_task_i2c_dta->queue_rx, "Task I2C Rx Queue Handle");
 
@@ -100,6 +109,8 @@ void release_i2c(I2C_HandleTypeDef *h_i2c_device)
 	task_i2c_dta_t *p_task_i2c_dta = &task_i2c_dta;
 
 	p_task_i2c_dta->device_id = h_i2c_device;
+	p_task_i2c_dta->mode_use = I2C_MODE_NOT_SUPPORTED;
+	p_task_i2c_dta->pattern_use = I2C_PATTERN_NOT_SUPPORTED;
 
 	// Check which version of the i2c triggered this function
 	if (p_task_i2c_dta->device_id == h_i2c_device)
@@ -114,7 +125,8 @@ void release_i2c(I2C_HandleTypeDef *h_i2c_device)
 	}
 }
 
-void write_i2c(I2C_HandleTypeDef *h_i2c_device, uint16_t dev_address, uint8_t dev_data)
+// INFO: Cambie esta funcion, porque estaba para transmitir 1 solo byte segun la estructura task_i2c_tx_dta_t
+void write_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *tx_data)
 {
 	task_i2c_dta_t *p_task_i2c_dta = &task_i2c_dta;
 
@@ -123,12 +135,20 @@ void write_i2c(I2C_HandleTypeDef *h_i2c_device, uint16_t dev_address, uint8_t de
 	// Check which version of the i2c triggered this function
 	if (p_task_i2c_dta->device_id == h_i2c_device)
 	{
-		task_i2c_tx_dta_t task_i2c_tx_dta;
 
-		task_i2c_tx_dta.address = dev_address;
-		task_i2c_tx_dta.data = dev_data;
+		if(p_task_i2c_dta->pattern_use == I2C_PATTERN_SYNC){
+			xQueueSend(p_task_i2c_dta->queue_tx, tx_data, portMAX_DELAY);
+//		}else if (p_task_i2c_dta.pattern_use == I2C_PATTERN_ASYNC){
+//			LOGGER_ERROR("I2C Patron no soportado");
+//
+//		}else if(p_task_i2c_dta.pattern_use == I2C_PATTERN_SYNC){
+//			LOGGER_ERROR("I2C Patron no soportado");
+		}
+		else{
+			LOGGER_ERROR("I2C Patron error");
+		}
 
-		xQueueSend(p_task_i2c_dta->queue_tx, &task_i2c_tx_dta, portMAX_DELAY);
+		xQueueSend(p_task_i2c_dta->queue_tx, tx_data, portMAX_DELAY);
 	}
 }
 

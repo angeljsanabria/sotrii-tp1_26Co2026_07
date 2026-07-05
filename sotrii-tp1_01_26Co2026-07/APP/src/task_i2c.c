@@ -44,84 +44,106 @@
 /* Application & Tasks includes */
 #include "board.h"
 #include "app.h"
+#include "app_it.h"
+#include "task_i2c_attribute.h"
 
 /********************** macros and definitions *******************************/
-#define G_TASK_GATE_C_CNT_INI	0ul
+#define G_TASK_XXXX_CNT_INI			0ul
+#define G_TASK_XXXX_RUNTIME_US_INI	0ul
 
-#define TASK_GATE_C_DEL_ZERO	(pdMS_TO_TICKS(0ul))
-#define TASK_GATE_C_DEL_MAX		(pdMS_TO_TICKS(2500ul))
+#define TASK_XXXX_DEL_ZERO	(pdMS_TO_TICKS(0ul))
+#define TASK_XXXX_DEL_MAX	(pdMS_TO_TICKS(250ul))
+
+/********************** internal data declaration ****************************/
 
 /********************** internal data declaration ****************************/
 
 /********************** internal functions declaration ***********************/
+void task_i2c_tx(void *parameters);
+void task_i2c_rx(void *parameters);
 
 /********************** internal data definition *****************************/
-const char *p_task_gate_c_wait_2500mS					= "   ==> Task Gate C  - Wait:   2500mS";
-const char *p_task_entry_c_wait_entry					= "   ==> Task C - Wait:   Entry C - Esperando Solicitud de apertura puerta C";
-const char *p_task_entry_c_signal_entry					= "   ==> Task C - Signal:   Entry C - Apertura puerta C solicitado";
-const char *p_task_entry_c_wait_control_esclusa			= "   ==> Task C - Wait Mutex:   Control esclusa C - Para abrir puerta C";
-const char *p_task_c_con_control_de_esclusa				= "   ==> Task C - Taken Mutex:   Control esclusa C - Para abrir puerta C";
-const char *p_task_c_con_control_de_esclusa_open_door	= "   ==> Task C - Accion:   Control esclusa C - Puerta C bierta";
-const char *p_task_entry_c_wait_exit					= "   ==> Task C - Wait:   Exit C - Esperando Cierre de puerta C";
-const char *p_task_entry_c_signal_exit					= "   ==> Task C - Signal:   Exit C - Cierre de apertura C realizado";
-const char *p_task_c_libera_control_de_esclusa			= "   ==> Task C - Signal Mutex:   Control esclusa C - Liberado por C\r\n";
-const char *p_task_c_ERROR								= "   ==> Task C - ERROR";
+const char *p_task_i2c_tx_wait_250mS	= "   ==> Task I2C TX - Wait:   250mS";
+const char *p_task_i2c_rx_wait_250mS	= "   ==> Task I2C RX - Wait:   250mS";
 
-/********************** external data declaration *****************************/
-uint32_t g_task_gate_c_cnt;
+/********************** external data declaration ****************************/
+uint32_t g_task_xxxx_tx_cnt;
+uint32_t g_task_xxxx_tx_runtime_us;
+
+uint32_t g_task_xxxx_rx_cnt;
+uint32_t g_task_xxxx_rx_runtime_us;
 
 /********************** external functions definition ************************/
-/* Task thread */
-void task_gate_c(void *parameters)
+/* Task I2C TX thread */
+void task_i2c_tx(void *parameters)
 {
 	/*  Declare & Initialize Task Function variables */
-	g_task_gate_c_cnt = G_TASK_GATE_C_CNT_INI;
+	g_task_xxxx_tx_cnt = G_TASK_XXXX_CNT_INI;
+	g_task_xxxx_tx_runtime_us = G_TASK_XXXX_RUNTIME_US_INI;
+
+	task_i2c_dta_t *p_task_i2c_tx_dta = (task_i2c_dta_t *)parameters;
+
+	/* Serial LCD I2C Module–PCF8574
+	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
+	 * https://www.ti.com/product/PCF8574
+ 	 * i2c1_tx_address_rd_wr = ((address base | jumper less address) << 1) | /write
+ 	 */
 
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
-	LOGGER_INFO("  %s is running - Tick [mS] = %lu", pcTaskGetName(NULL), xTaskGetTickCount());
+	LOGGER_INFO("%s is running - Tick [mS] = %3d", pcTaskGetName(NULL), (int)xTaskGetTickCount());
 
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
 	{
 		/* Update Task Counter */
-		g_task_gate_c_cnt++;
+		g_task_xxxx_tx_cnt++;
 
-		LOGGER_INFO(p_task_entry_c_wait_entry);
-		xSemaphoreTake(h_entry_c_bin_sem, portMAX_DELAY);		// Esperando señal apertura puerta C
-		{
-			LOGGER_INFO(p_task_entry_c_signal_entry);
-			LOGGER_INFO(p_task_entry_c_wait_control_esclusa);
-			xSemaphoreTake(h_mutex_control_esclusa_sem, portMAX_DELAY);
-			{
-				LOGGER_INFO(p_task_c_con_control_de_esclusa);
+		task_i2c_tx_dta_t task_i2c_tx_dta;
 
-				if(g_gate_open == gate_open_NONE){
-					g_gate_open = gate_open_C;
-				}else{
-					LOGGER_INFO(p_task_c_ERROR);
-				}
-				LOGGER_INFO(p_task_c_con_control_de_esclusa_open_door);
-			}
+		cycle_counter_reset();
 
-			LOGGER_INFO(p_task_entry_c_wait_exit);
-			xSemaphoreTake(h_exit_c_bin_sem, portMAX_DELAY);	// Esperando señal cierre puerta C
-			{
-				if(g_gate_open != gate_open_C){
-					LOGGER_INFO(p_task_c_ERROR);
-				}else{
-					g_gate_open = gate_open_NONE;
-				}
-				LOGGER_INFO(p_task_entry_c_signal_exit);
-			}
-		}
-		// SIGNAL DE MUTEX
-		xSemaphoreGive(h_mutex_control_esclusa_sem);
-		LOGGER_INFO(p_task_c_libera_control_de_esclusa);
+		xQueueReceive(p_task_i2c_tx_dta->queue_tx, &task_i2c_tx_dta, portMAX_DELAY);
 
-//    	/* Print out: Wait 2500mS */
-//		LOGGER_INFO(p_task_gate_c_wait_2500mS);
-//		vTaskDelay(TASK_GATE_C_DEL_MAX);
+		HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.data, sizeof(task_i2c_tx_dta.data), HAL_MAX_DELAY);
+
+		g_task_xxxx_tx_runtime_us = cycle_counter_get_time_us();
+
+    	/* Print out: Wait 250mS */
+		LOGGER_INFO(p_task_i2c_tx_wait_250mS);
+		vTaskDelay(TASK_XXXX_DEL_MAX);
+	}
+}
+
+/* Task I2C RX thread */
+void task_i2c_rx(void *parameters)
+{
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(parameters);
+
+	/*  Declare & Initialize Task Function variables */
+	g_task_xxxx_rx_cnt = G_TASK_XXXX_CNT_INI;
+	g_task_xxxx_rx_runtime_us = G_TASK_XXXX_RUNTIME_US_INI;
+
+	/* Print out: Task Initialized */
+	LOGGER_INFO(" ");
+	LOGGER_INFO("%s is running - Tick [mS] = %3d", pcTaskGetName(NULL), (int)xTaskGetTickCount());
+
+	/* As per most tasks, this task is implemented in an infinite loop. */
+	for (;;)
+	{
+		/* Update Task Counter */
+		g_task_xxxx_rx_cnt++;
+
+		cycle_counter_reset();
+
+		HAL_GPIO_TogglePin(LED_A_PORT, LED_A_PIN);
+
+		g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
+
+    	/* Print out: Wait 250mS */
+		LOGGER_INFO(p_task_i2c_rx_wait_250mS);
+		vTaskDelay(TASK_XXXX_DEL_MAX);
 	}
 }
 

@@ -1,7 +1,8 @@
 # CESE - Sistemas Operativos de Tiempo Real 
-## Trabajo Práctico N°: 1 - Tareas de FreeRTOS 
+## Trabajo Práctico N°: 1 – Device Driver de FreeRTOS
+### TP1 – Actividad 01 – Device Driver I2C de FreeRTOS
 ### Cohorte-Grupo 
-### Responsable de la entrega: 
+### Responsable de la entrega: Sanabria, Angel Javier
 | N° SIU | Apellidos, Nombres | Fecha | Deadline |
 | :----- | :--------------------- | :------: | :-------: | 
 | e2622 | Sanabria, Angel Javier| 17/05/2026| Semana 04 |

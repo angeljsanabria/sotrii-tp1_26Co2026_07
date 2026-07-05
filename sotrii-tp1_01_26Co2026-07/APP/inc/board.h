@@ -56,7 +56,7 @@ extern "C" {
 #define STM32F407G_DISC1	(8)
 #define STM32F429I_DISC1	(9)
 
-#define BOARD (NUCLEO_F103RC)
+#define BOARD (NUCLEO_F446RE)
 
 /* STM32 Nucleo Boards - 32 Pins */
 #if (BOARD == NUCLEO_F303K8)

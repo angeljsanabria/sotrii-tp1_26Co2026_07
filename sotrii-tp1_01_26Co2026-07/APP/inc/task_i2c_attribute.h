@@ -32,8 +32,8 @@
  * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
  */
 
-#ifndef APP_H_
-#define APP_H_
+#ifndef TASK_I2C_ATTRIBUTE_H_
+#define TASK_I2C_ATTRIBUTE_H_
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -43,33 +43,36 @@ extern "C" {
 /********************** inclusions *******************************************/
 
 /********************** macros ***********************************************/
-#define TASK_QTY 3ul
 
 /********************** typedef **********************************************/
+/* Structure of Task */
+typedef struct
+{
+	I2C_HandleTypeDef * device_id;
+
+	TaskHandle_t		task_tx;
+	QueueHandle_t		queue_tx;
+
+	TaskHandle_t		task_rx;
+	QueueHandle_t		queue_rx;
+} task_i2c_dta_t;
+
+/* Structure of I2C Tx */
+typedef struct
+{
+	uint16_t	address;
+	uint8_t		data;
+} task_i2c_tx_dta_t;
 
 /********************** external data declaration ****************************/
-extern volatile uint32_t g_app_tick_cnt;
-extern uint32_t g_task_idle_cnt;
-extern uint32_t g_app_stack_overflow_cnt;
-
-/* Declare a variable of type QueueHandle_t. This is used to reference queues*/
-
-/* Declare a variable of type SemaphoreHandle_t (binary or counting) or mutex.
- * This is used to reference the semaphore that is used to synchronize a thread
- * with other thread or to ensure mutual exclusive access to...*/
-
-/* Declare a variable of type TaskHandle_t. This is used to reference threads. */
-extern TaskHandle_t h_task_sender;
-extern TaskHandle_t h_task_receiver;
 
 /********************** external functions declaration ***********************/
-extern void app_init(void);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* APP_H_ */
+#endif /* TASK_I2C_ATTRIBUTE_H_ */
 
 /********************** end of file ******************************************/

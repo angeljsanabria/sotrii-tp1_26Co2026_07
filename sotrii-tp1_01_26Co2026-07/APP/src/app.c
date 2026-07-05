@@ -44,19 +44,15 @@
 /* Application & Tasks includes */
 #include "board.h"
 #include "app_it.h"
-#include "task_gate_a.h"
-#include "task_gate_b.h"
-#include "task_gate_c.h"
-#include "task_gate_d.h"
-#include "task_test.h"
+#include "task_sender.h"
+#include "task_receiver.h"
+#include "task_i2c.h"
+#include "task_i2c_interface.h"
 
 /********************** macros and definitions *******************************/
-#define G_APP_CNT_INI					0ul
-#define G_APP_TASK_CNT_INI				0ul
 #define G_APP_TICK_CNT_INI				0ul
 #define G_TASK_IDLE_CNT_INI				0ul
 #define G_APP_STACK_OVERFLOW_CNT_INI	0ul
-#define G_TASKS_CNT_INI					0ul
 
 /********************** internal data declaration ****************************/
 
@@ -64,96 +60,31 @@
 
 /********************** internal data definition *****************************/
 const char *p_app	= "RTOS - Event-Triggered Systems (ETS)";
-const char *p_app_	= "sotrii-tp1_01-application: Security airlock";
+const char *p_app_	= "sotrii-tp1_01-application: Demo Code";
 const char *p_app__	= "(Source => CESE - Sistemas Operativos de Tiempo Real)";
 
 /********************** external data declaration ****************************/
-uint32_t g_app_cnt;
-uint32_t g_app_task_cnt;
-uint32_t g_app_tick_cnt;
+uint32_t volatile g_app_tick_cnt;
 uint32_t g_task_idle_cnt;
 uint32_t g_app_stack_overflow_cnt;
-
-uint32_t g_tasks_cnt;
-uint32_t g_gate_open;
 
 /* Declare a variable of type QueueHandle_t. This is used to reference queues*/
 
 /* Declare a variable of type SemaphoreHandle_t (binary or counting) or mutex.
  * This is used to reference the semaphore that is used to synchronize a thread
  * with other thread or to ensure mutual exclusive access to...*/
-// Declaracion de semaforos
-SemaphoreHandle_t h_entry_a_bin_sem;
-SemaphoreHandle_t h_exit_a_bin_sem;
-SemaphoreHandle_t h_entry_b_bin_sem;
-SemaphoreHandle_t h_exit_b_bin_sem;
-SemaphoreHandle_t h_entry_c_bin_sem;
-SemaphoreHandle_t h_exit_c_bin_sem;
-SemaphoreHandle_t h_entry_d_bin_sem;
-SemaphoreHandle_t h_exit_d_bin_sem;
-SemaphoreHandle_t h_mutex_control_esclusa_sem;
-SemaphoreHandle_t h_continue_bin_sem;
 
 /* Declare a variable of type TaskHandle_t. This is used to reference threads. */
-TaskHandle_t h_task_gate_a;
-TaskHandle_t h_task_gate_b;
-TaskHandle_t h_task_gate_c;
-TaskHandle_t h_task_gate_d;
-TaskHandle_t h_task_test;
+TaskHandle_t h_task_sender;
+TaskHandle_t h_task_receiver;
 
 /********************** external functions definition ************************/
 void app_init(void)
 {
 	/*  Declare & Initialize App variables */
-	g_app_cnt = G_APP_CNT_INI;
-	g_app_task_cnt = G_APP_TASK_CNT_INI;
 	g_app_tick_cnt = G_APP_TICK_CNT_INI;
 	g_task_idle_cnt = G_TASK_IDLE_CNT_INI;
 	g_app_stack_overflow_cnt = G_APP_STACK_OVERFLOW_CNT_INI;
-
-	g_tasks_cnt = G_TASKS_CNT_INI;
-//	g_gate_open = gate_open_NONE;
-
-	// Init semaforos Puerta A
-	h_entry_a_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_entry_a_bin_sem);
-	vQueueAddToRegistry(h_entry_a_bin_sem, "Entry Gate A BIN Handle");
-
-	h_exit_a_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_exit_a_bin_sem);
-	vQueueAddToRegistry(h_exit_a_bin_sem, "Exit Gate A BIN Handle");
-
-	// Init semaforos Puerta B
-	h_entry_b_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_entry_b_bin_sem);
-	vQueueAddToRegistry(h_entry_b_bin_sem, "Entry Gate B BIN Handle");
-
-	h_exit_b_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_exit_b_bin_sem);
-	vQueueAddToRegistry(h_exit_b_bin_sem, "Exit Gate B BIN Handle");
-
-	// Init semaforos Puerta C
-	h_entry_c_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_entry_c_bin_sem);
-	vQueueAddToRegistry(h_entry_c_bin_sem, "Entry Gate C BIN Handle");
-
-	h_exit_c_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_exit_c_bin_sem);
-	vQueueAddToRegistry(h_exit_c_bin_sem, "Exit Gate C BIN Handle");
-
-	// Init semaforos Puerta D
-	h_entry_d_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_entry_d_bin_sem);
-	vQueueAddToRegistry(h_entry_d_bin_sem, "Entry Gate D BIN Handle");
-
-	h_exit_d_bin_sem = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_exit_d_bin_sem);
-	vQueueAddToRegistry(h_exit_d_bin_sem, "Exit Gate D BIN Handle");
-
-	// Init mutex control de esclusa
-	h_mutex_control_esclusa_sem = xSemaphoreCreateMutex();
-	configASSERT(NULL != h_mutex_control_esclusa_sem);
-	vQueueAddToRegistry(h_mutex_control_esclusa_sem, "Mutex Control Esclusa Handle");
 
 	/* Print out: Application Initialized */
 	LOGGER_INFO(" ");
@@ -171,60 +102,33 @@ void app_init(void)
      *
      * Add queue or semaphore (binary or counting) or mutex to registry. */
 
+	/* The queue is created to hold a maximum of 5 task_led_ev_t values. */
+
+	/* The semaphore is created in the 'empty' state, meaning the semaphore
+	 * must first be given using the xSemaphoreGive() API function before it can
+	 * subsequently be taken (obtained) using the xSemaphoreTake() function */
+
 	/* Add threads, ... */
     BaseType_t ret;
 
-    /* Task Gate A thread at priority 3 */
-    ret = xTaskCreate(task_gate_a,						/* Pointer to the function thats implement the task. */
-					  "Task Gate A",					/* Text name for the task. This is to facilitate debugging only. */
-					  (configMINIMAL_STACK_SIZE),		/* Stack depth in words. */
-					  NULL,								/* We are not using the task parameter. */
-					  (tskIDLE_PRIORITY + 3ul),			/* This task will run at priority 1. */
-					  &h_task_gate_a);					/* We are using a variable as task handle. */
-
-    /* Check the thread was created successfully. */
-    configASSERT(pdPASS == ret);
-
-    /* Task Gate B thread at priority 2 */
-    ret = xTaskCreate(task_gate_b,						/* Pointer to the function thats implement the task. */
-					  "Task Gate B",					/* Text name for the task. This is to facilitate debugging only. */
-					  (configMINIMAL_STACK_SIZE),		/* Stack depth in words. */
-					  NULL,								/* We are not using the task parameter. */
-					  (tskIDLE_PRIORITY + 2ul),			/* This task will run at priority 1. */
-					  &h_task_gate_b);					/* We are using a variable as task handle. */
-
-    /* Check the thread was created successfully. */
-    configASSERT(pdPASS == ret);
-
-    /* Task Gate C thread at priority 3 */
-    ret = xTaskCreate(task_gate_c,						/* Pointer to the function thats implement the task. */
-					  "Task Gate B",					/* Text name for the task. This is to facilitate debugging only. */
-					  (configMINIMAL_STACK_SIZE),		/* Stack depth in words. */
-					  NULL,								/* We are not using the task parameter. */
-					  (tskIDLE_PRIORITY + 2ul),			/* This task will run at priority 1. */
-					  &h_task_gate_c);					/* We are using a variable as task handle. */
-
-    /* Check the thread was created successfully. */
-    configASSERT(pdPASS == ret);
-
-    /* Task Gate D thread at priority 2 */
-    ret = xTaskCreate(task_gate_d,						/* Pointer to the function thats implement the task. */
-					  "Task Gate D",					/* Text name for the task. This is to facilitate debugging only. */
-					  (configMINIMAL_STACK_SIZE),		/* Stack depth in words. */
-					  NULL,								/* We are not using the task parameter. */
-					  (tskIDLE_PRIORITY + 2ul),			/* This task will run at priority 1. */
-					  &h_task_gate_d);					/* We are using a variable as task handle. */
-
-    /* Check the thread was created successfully. */
-    configASSERT(pdPASS == ret);
-
-    /* Task Test thread at priority 1 */
-    ret = xTaskCreate(task_test,						/* Pointer to the function thats implement the task. */
-					  "Task Test",						/* Text name for the task. This is to facilitate debugging only. */
-					  (configMINIMAL_STACK_SIZE),		/* Stack depth in words. */
+    /* Task Sender thread at priority 1 */
+    ret = xTaskCreate(task_sender,						/* Pointer to the function thats implement the task. */
+					  "Task Sender",					/* Text name for the task. This is to facilitate debugging only. */
+					  (2 * configMINIMAL_STACK_SIZE),	/* Stack depth in words. */
 					  NULL,								/* We are not using the task parameter. */
 					  (tskIDLE_PRIORITY + 1ul),			/* This task will run at priority 1. */
-					  &h_task_test);					/* We are using a variable as task handle. */
+					  &h_task_sender);					/* We are using a variable as task handle. */
+
+    /* Check the thread was created successfully. */
+    configASSERT(pdPASS == ret);
+
+    /* Task Receiver thread at priority 1 */
+    ret = xTaskCreate(task_receiver,					/* Pointer to the function thats implement the task. */
+					  "Task Receiver",					/* Text name for the task. This is to facilitate debugging only. */
+					  (2 * configMINIMAL_STACK_SIZE),	/* Stack depth in words. */
+					  NULL,								/* We are not using the task parameter. */
+					  (tskIDLE_PRIORITY + 1ul),			/* This task will run at priority 1. */
+					  &h_task_receiver);				/* We are using a variable as task handle. */
 
     /* Check the thread was created successfully. */
     configASSERT(pdPASS == ret);
@@ -239,7 +143,10 @@ void app_init(void)
      * one task in this state at the moment), but the currently run task ID
      * is stored in variable pxCurrentTCB */
 
-  	/* Application Interrupts Init */
+    /* I2C Device Diver Init */
+    open_i2c(&hi2c1);
+
+    /* Application Interrupts Init */
 	app_it_init();
 
 	/* Init Cycle Counter */

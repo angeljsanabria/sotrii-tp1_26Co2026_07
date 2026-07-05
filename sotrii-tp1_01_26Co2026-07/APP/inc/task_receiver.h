@@ -32,8 +32,8 @@
  * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
  */
 
-#ifndef TASK_GATE_D_H_
-#define TASK_GATE_D_H_
+#ifndef TASK_RECEIVER_H_
+#define TASK_RECEIVER_H_
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -47,16 +47,15 @@ extern "C" {
 /********************** typedef **********************************************/
 
 /********************** external data declaration ****************************/
-extern uint32_t g_task_gate_d_cnt;
 
 /********************** external functions declaration ***********************/
-extern void task_gate_d(void *parameters);
+extern void task_receiver(void *parameters);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TASK_GATE_D_H_ */
+#endif /* TASK_RECEIVER_H_ */
 
 /********************** end of file ******************************************/

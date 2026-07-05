@@ -32,31 +32,57 @@
  * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
  */
 
-#ifndef TASK_GATE_C_H_
-#define TASK_GATE_C_H_
-
-/********************** CPP guard ********************************************/
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /********************** inclusions *******************************************/
+/* Project includes */
+#include "main.h"
+#include "cmsis_os.h"
 
-/********************** macros ***********************************************/
+/* Demo includes */
+#include "logger.h"
+#include "dwt.h"
 
-/********************** typedef **********************************************/
+/* Application & Tasks includes */
+#include "board.h"
+#include "app.h"
+#include "task_i2c_interface.h"
+
+/********************** macros and definitions *******************************/
+#define G_TASK_RECEIVER_CNT_INI	0ul
+
+#define TASK_RECEIVER_DEL_ZERO		(pdMS_TO_TICKS(0ul))
+#define TASK_RECEIVER_DEL_MAX		(pdMS_TO_TICKS(250ul))
+
+/********************** internal data declaration ****************************/
+
+/********************** internal functions declaration ***********************/
+
+/********************** internal data definition *****************************/
+const char *p_task_receiver_wait_250mS		= "   ==> Task RECEIVER - Wait:   250mS";
 
 /********************** external data declaration ****************************/
-extern uint32_t g_task_gate_c_cnt;
+uint32_t g_task_receiver_cnt;
 
-/********************** external functions declaration ***********************/
-extern void task_gate_c(void *parameters);
+/********************** external functions definition ************************/
+/* Task thread */
+void task_receiver(void *parameters)
+{
+	/*  Declare & Initialize Task Function variables */
+	g_task_receiver_cnt = G_TASK_RECEIVER_CNT_INI;
 
-/********************** End of CPP guard *************************************/
-#ifdef __cplusplus
+	/* Print out: Task Initialized */
+	LOGGER_INFO(" ");
+	LOGGER_INFO("  %s is running - Tick [mS] = %lu", pcTaskGetName(NULL), xTaskGetTickCount());
+
+	/* As per most tasks, this task is implemented in an infinite loop. */
+	for (;;)
+    {
+		/* Update Task Counter */
+		g_task_receiver_cnt++;
+
+    	/* Print out: Wait 250mS */
+		LOGGER_INFO(p_task_receiver_wait_250mS);
+		vTaskDelay(TASK_RECEIVER_DEL_MAX);
+	}
 }
-#endif
-
-#endif /* TASK_GATE_C_H_ */
 
 /********************** end of file ******************************************/

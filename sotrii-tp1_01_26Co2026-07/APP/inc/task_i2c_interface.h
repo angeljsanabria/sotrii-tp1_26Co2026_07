@@ -32,8 +32,8 @@
  * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
  */
 
-#ifndef TASK_GATE_B_H_
-#define TASK_GATE_B_H_
+#ifndef TASK_I2C_INTERFACE_H_
+#define TASK_I2C_INTERFACE_H_
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -47,16 +47,21 @@ extern "C" {
 /********************** typedef **********************************************/
 
 /********************** external data declaration ****************************/
-extern uint32_t g_task_gate_b_cnt;
 
 /********************** external functions declaration ***********************/
-extern void task_gate_b(void *parameters);
+extern void open_i2c(I2C_HandleTypeDef *h_i2c_device);
+extern void release_i2c(I2C_HandleTypeDef *h_i2c_device);
+
+extern void write_i2c(I2C_HandleTypeDef *h_i2c_device, uint16_t address, uint8_t data);
+extern void read_i2c(I2C_HandleTypeDef *h_i2c_device);
+
+extern void ioctl_i2c(I2C_HandleTypeDef *h_i2c_device);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TASK_GATE_B_H_ */
+#endif /* TASK_I2C_INTERFACE_H_ */
 
 /********************** end of file ******************************************/

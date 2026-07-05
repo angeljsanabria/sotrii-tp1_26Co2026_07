@@ -44,38 +44,38 @@
 /* Application & Tasks includes */
 #include "board.h"
 #include "app.h"
+#include "task_i2c_interface.h"
 
 /********************** macros and definitions *******************************/
-#define G_TASK_GATE_B_CNT_INI	0ul
+#define G_TASK_SENDER_CNT_INI	0ul
 
-#define TASK_GATE_B_DEL_ZERO	(pdMS_TO_TICKS(0ul))
-#define TASK_GATE_B_DEL_MAX		(pdMS_TO_TICKS(2500ul))
+#define TASK_SENDER_DEL_ZERO	(pdMS_TO_TICKS(0ul))
+#define TASK_SENDER_DEL_MAX		(pdMS_TO_TICKS(250ul))
 
 /********************** internal data declaration ****************************/
 
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
-const char *p_task_gate_b_wait_2500mS					= "   ==> Task Gate B  - Wait:   2500mS";
-const char *p_task_entry_b_wait_entry					= "   ==> Task B - Wait:   Entry B - Esperando Solicitud de apertura puerta B";
-const char *p_task_entry_b_signal_entry					= "   ==> Task B - Signal:   Entry B - Apertura puerta B solicitado";
-const char *p_task_entry_b_wait_control_esclusa			= "   ==> Task B - Wait Mutex:   Control esclusa B - Para abrir puerta B";
-const char *p_task_b_con_control_de_esclusa				= "   ==> Task B - Taken Mutex:   Control esclusa B - Para abrir puerta B";
-const char *p_task_b_con_control_de_esclusa_open_door	= "   ==> Task B - Accion:   Control esclusa B - Puerta B bierta";
-const char *p_task_entry_b_wait_exit					= "   ==> Task B - Wait:   Exit B - Esperando Cierre de puerta B";
-const char *p_task_entry_b_signal_exit					= "   ==> Task B - Signal:   Exit B - Cierre de apertura B realizado";
-const char *p_task_b_libera_control_de_esclusa			= "   ==> Task B - Signal Mutex:   Control esclusa B - Liberado por B\r\n";
-const char *p_task_b_ERROR								= "   ==> Task B - ERROR";
+const char *p_task_sender_wait_250mS		= "   ==> Task SENDER - Wait:   250mS";
 
-/********************** external data declaration *****************************/
-uint32_t g_task_gate_b_cnt;
+/********************** external data declaration ****************************/
+uint32_t g_task_sender_cnt;
 
 /********************** external functions definition ************************/
 /* Task thread */
-void task_gate_b(void *parameters)
+void task_sender(void *parameters)
 {
 	/*  Declare & Initialize Task Function variables */
-	g_task_gate_b_cnt = G_TASK_GATE_B_CNT_INI;
+	g_task_sender_cnt = G_TASK_SENDER_CNT_INI;
+
+	/* Serial LCD I2C Module–PCF8574
+	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
+	 * https://www.ti.com/product/PCF8574
+ 	 * dev_address = (address base | jumper less address)
+ 	 */
+	uint16_t dev_address = 0x27;
+	uint8_t dev_data = 0x55;
 
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
@@ -85,43 +85,15 @@ void task_gate_b(void *parameters)
 	for (;;)
 	{
 		/* Update Task Counter */
-		g_task_gate_b_cnt++;
+		g_task_sender_cnt++;
 
-		LOGGER_INFO(p_task_entry_b_wait_entry);
-		xSemaphoreTake(h_entry_b_bin_sem, portMAX_DELAY);		// Esperando señal apertura puerta B
-		{
-			LOGGER_INFO(p_task_entry_b_signal_entry);
-			LOGGER_INFO(p_task_entry_b_wait_control_esclusa);
-			xSemaphoreTake(h_mutex_control_esclusa_sem, portMAX_DELAY);
-			{
-				LOGGER_INFO(p_task_b_con_control_de_esclusa);
+		/* I2C Device Diver Write */
+		dev_data = ~dev_data;
+		write_i2c(&hi2c1, dev_address, dev_data);
 
-				if(g_gate_open == gate_open_NONE){
-					g_gate_open = gate_open_B;
-				}else{
-					LOGGER_INFO(p_task_b_ERROR);
-				}
-				LOGGER_INFO(p_task_b_con_control_de_esclusa_open_door);
-			}
-
-			LOGGER_INFO(p_task_entry_b_wait_exit);
-			xSemaphoreTake(h_exit_b_bin_sem, portMAX_DELAY);	// Esperando señal cierre puerta B
-			{
-				if(g_gate_open != gate_open_B){
-					LOGGER_INFO(p_task_b_ERROR);
-				}else{
-					g_gate_open = gate_open_NONE;
-				}
-				LOGGER_INFO(p_task_entry_b_signal_exit);
-			}
-		}
-		// SIGNAL DE MUTEX
-		xSemaphoreGive(h_mutex_control_esclusa_sem);
-		LOGGER_INFO(p_task_b_libera_control_de_esclusa);
-
-//    	/* Print out: Wait 2500mS */
-//		LOGGER_INFO(p_task_gate_b_wait_2500mS);
-//		vTaskDelay(TASK_GATE_B_DEL_MAX);
+    	/* Print out: Wait 250mS */
+		LOGGER_INFO(p_task_sender_wait_250mS);
+		vTaskDelay(TASK_SENDER_DEL_MAX);
 	}
 }
 

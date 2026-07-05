@@ -32,8 +32,8 @@
  * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
  */
 
-#ifndef TASK_TEST_H_
-#define TASK_TEST_H_
+#ifndef TASK_I2C_H_
+#define TASK_I2C_H_
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -49,13 +49,14 @@ extern "C" {
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
-extern void task_test(void *parameters);
+extern void task_i2c_tx(void *parameters);
+extern void task_i2c_rx(void *parameters);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TASK_TEST_H_ */
+#endif /* TASK_I2C_H_ */
 
 /********************** end of file ******************************************/

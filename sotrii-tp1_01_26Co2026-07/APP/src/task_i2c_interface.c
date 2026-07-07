@@ -91,6 +91,11 @@ void open_i2c(I2C_HandleTypeDef *h_i2c_device, i2c_mode_hal_driver_t set_mode, i
 	configASSERT(NULL != p_task_i2c_dta->queue_rx);
 	vQueueAddToRegistry(p_task_i2c_dta->queue_rx, "Task I2C Rx Queue Handle");
 
+	// Creo semaforo binario usado para sync // Puedo meter condicion que solo se cree en I2C_PATTERN_SYNC; Sino queda en null
+	p_task_i2c_dta->sync_done  = xSemaphoreCreateBinary();
+	configASSERT(NULL != p_task_i2c_dta->sync_done);
+	vQueueAddToRegistry(h_entry_a_bin_sem, "Semaforo binario para SYNC");
+
     /* Before a task is executed it must be explicitly created.
 	 * Check the task was created successfully. */
     ret = xTaskCreate(task_i2c_tx, "Task I2C Tx", (configMINIMAL_STACK_SIZE),
@@ -122,6 +127,8 @@ void release_i2c(I2C_HandleTypeDef *h_i2c_device)
 
 		vTaskDelete(p_task_i2c_dta->task_tx);
 		vTaskDelete(p_task_i2c_dta->task_rx);
+		// TODO BOrrar el semaforo de SYNC
+		vSemaphoreDelete(p_task_i2c_dta->sem_sync);
 	}
 }
 
@@ -139,13 +146,13 @@ void write_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *tx_data)
 		if(p_task_i2c_dta->pattern_use == I2C_PATTERN_SYNC){
 			xQueueSend(p_task_i2c_dta->queue_tx, tx_data, portMAX_DELAY);
 //		}else if (p_task_i2c_dta.pattern_use == I2C_PATTERN_ASYNC){
-//			LOGGER_ERROR("I2C Patron no soportado");
+//			LOGGER_INFO("I2C Patron no soportado");
 //
 //		}else if(p_task_i2c_dta.pattern_use == I2C_PATTERN_SYNC){
-//			LOGGER_ERROR("I2C Patron no soportado");
+//			LOGGER_INFO("I2C Patron no soportado");
 		}
 		else{
-			LOGGER_ERROR("I2C Patron error");
+			LOGGER_INFO("I2C Patron error");
 		}
 
 		xQueueSend(p_task_i2c_dta->queue_tx, tx_data, portMAX_DELAY);

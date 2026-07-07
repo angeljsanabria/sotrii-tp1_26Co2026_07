@@ -50,18 +50,18 @@ extern "C" {
 typedef enum
 {
     I2C_MODE_POLLING = 0,
-//    I2C_MODE_INTERRUPT,
-//    I2C_MODE_DMA,
     I2C_MODE_NOT_SUPPORTED,
+	I2C_MODE_INTERRUPT,		// Los dejo definidos pero no los usamos en este TP
+    I2C_MODE_DMA,
 } i2c_mode_hal_driver_t;
 
 //Synchronous , Asynchronous , Latest Input Only
 typedef enum
 {
     I2C_PATTERN_SYNC = 0,
-//    I2C_PATTERN_ASYNC,
-//    I2C_PATERN_LASTEST_INPUT_ONLY,
     I2C_PATTERN_NOT_SUPPORTED,
+    I2C_PATTERN_ASYNC,		// Los dejo definidos pero no los usamos en este TP
+    I2C_PATERN_LASTEST_INPUT_ONLY,	
 } i2c_pattern_driver_t;
 
 
@@ -75,6 +75,8 @@ typedef struct
 
 	TaskHandle_t		task_rx;
 	QueueHandle_t		queue_rx;
+
+	SemaphoreHandle_t   sync_done;
 
 	i2c_mode_hal_driver_t 	mode_use;
 	i2c_pattern_driver_t 	pattern_use;			// Patron de diseño seleccionado

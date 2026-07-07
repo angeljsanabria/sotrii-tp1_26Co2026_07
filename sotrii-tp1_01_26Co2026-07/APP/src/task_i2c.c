@@ -83,6 +83,8 @@ void task_i2c_tx(void *parameters)
 
 	task_i2c_dta_t *p_task_i2c_tx_dta = (task_i2c_dta_t *)parameters;
 
+	xSemaphoreTake(p_task_i2c_tx_dta->sync_done, (portTickType) 0);		// inicio el sem en 0
+
 	/* Serial LCD I2C Module–PCF8574
 	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
 	 * https://www.ti.com/product/PCF8574
@@ -107,10 +109,10 @@ void task_i2c_tx(void *parameters)
 
 
 		if(p_task_i2c_tx_dta->mode_use == I2C_MODE_POLLING){
-
-		}else{
 			HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.buffer[0], task_i2c_tx_dta.len, HAL_MAX_DELAY);
-			LOGGER_ERROR("I2C Patron error");
+		}else{
+			// los otros modos no los desarrollamos en este TP para i2c.
+			LOGGER_INFO("I2C Patron error");
 		}
 
 

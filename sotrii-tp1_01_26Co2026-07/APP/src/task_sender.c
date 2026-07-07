@@ -91,7 +91,6 @@ void task_sender(void *parameters)
 	 * Table 3. Register 0x32 a 0x37:
 	 * - 16 bits: X data, Y data, Z data  (Data 0 y Data 1 de cada eje)
  	 */
-	
 	adxl345_data.i2c_addr = ADXL345_ADDRESS_SHIFTED;
 	adxl345_data.initialized = false;
 	adxl345_data.is_valid_sample = false;

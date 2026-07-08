@@ -59,7 +59,7 @@
 
 /********************** internal data definition *****************************/
 const char *p_task_sender_wait_250mS		= "   ==> Task SENDER - Wait:   250mS";
-static adxl345_dta_t adxl345_data = {0};
+adxl345_dta_t adxl345_data = {0};
 /********************** external data declaration ****************************/
 uint32_t g_task_sender_cnt;
 
@@ -100,18 +100,24 @@ void task_sender(void *parameters)
 	LOGGER_INFO(" ");
 	LOGGER_INFO("  %s is running - Tick [mS] = %lu", pcTaskGetName(NULL), xTaskGetTickCount());
 
+	task_i2c_tx_rx_dta_t tx;
+
+	tx.address = ADXL345_ADDRESS;
+
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
 	{
 		/* Update Task Counter */
 		g_task_sender_cnt++;
 
-		/* I2C Device Diver Write */
-		if(adxl345_data.initialized == false){
-			// Mandar solo al registro power
-		}else{
-			// leer la data desde el registro de X1 con length 6
-
+		/* I2C Device Driver init: write POWER_CTL, avisar a task_receiver */
+		if (adxl345_data.initialized == false)
+		{
+			tx.len = 2;
+			tx.buffer[0] = ADXL345_REG_POWER_CTL;
+			tx.buffer[1] = ADXL345_REG_POWER_CTL_SET_IN_MEASURE;
+			write_i2c(&hi2c1, &tx);
+			xSemaphoreGive(h_sem_adxl_init_write_done);
 		}
 
 

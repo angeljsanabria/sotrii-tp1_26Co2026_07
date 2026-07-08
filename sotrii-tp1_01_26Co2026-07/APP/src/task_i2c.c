@@ -81,9 +81,7 @@ void task_i2c_tx(void *parameters)
 	g_task_xxxx_tx_cnt = G_TASK_XXXX_CNT_INI;
 	g_task_xxxx_tx_runtime_us = G_TASK_XXXX_RUNTIME_US_INI;
 
-	task_i2c_dta_t *p_task_i2c_tx_dta = (task_i2c_dta_t *)parameters;
-
-	xSemaphoreTake(p_task_i2c_tx_dta->sync_done, (portTickType) 0);		// inicio el sem en 0
+	task_i2c_dta_t *p_task_i2c_tx_dta = (task_i2c_dta_t *)parameters;	
 
 	/* Serial LCD I2C Module–PCF8574
 	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
@@ -110,6 +108,8 @@ void task_i2c_tx(void *parameters)
 
 		if(p_task_i2c_tx_dta->mode_use == I2C_MODE_POLLING){
 			HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.buffer[0], task_i2c_tx_dta.len, HAL_MAX_DELAY);
+			// Puedo ver el HAL_OK para ver si doy el semaforo o no,.
+			xSemaphoreGive(p_task_i2c_tx_dta->sem_sync_tx_done);
 		}else{
 			// los otros modos no los desarrollamos en este TP para i2c.
 			LOGGER_INFO("I2C Patron error");
@@ -127,8 +127,7 @@ void task_i2c_tx(void *parameters)
 /* Task I2C RX thread */
 void task_i2c_rx(void *parameters)
 {
-	/* Prevent unused argument(s) compilation warning */
-	UNUSED(parameters);
+	task_i2c_dta_t *p_task_i2c_rx_dta = (task_i2c_dta_t *)parameters;
 
 	/*  Declare & Initialize Task Function variables */
 	g_task_xxxx_rx_cnt = G_TASK_XXXX_CNT_INI;
@@ -141,18 +140,49 @@ void task_i2c_rx(void *parameters)
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
 	{
+		task_i2c_tx_rx_dta_t task_i2c_rx_dta;
+
 		/* Update Task Counter */
 		g_task_xxxx_rx_cnt++;
 
 		cycle_counter_reset();
 
-		HAL_GPIO_TogglePin(LED_A_PORT, LED_A_PIN);
+		xQueueReceive(p_task_i2c_rx_dta->queue_rx, &task_i2c_rx_dta, portMAX_DELAY);
+
+		if (p_task_i2c_rx_dta->mode_use == I2C_MODE_POLLING)
+		{
+			if (task_i2c_rx_dta.rx_type == I2C_RX_SIMPLE)
+			{
+				HAL_I2C_Master_Receive(p_task_i2c_rx_dta->device_id,
+				                       (task_i2c_rx_dta.address << 1),
+				                       &task_i2c_rx_dta.buffer[0],
+				                       task_i2c_rx_dta.len,
+				                       HAL_MAX_DELAY);
+			}
+			else if (task_i2c_rx_dta.rx_type == I2C_RX_MAP_REG)
+			{
+				HAL_I2C_Mem_Read(p_task_i2c_rx_dta->device_id,
+				                (task_i2c_rx_dta.address << 1),
+				                task_i2c_rx_dta.read_add,
+				                I2C_MEMADD_SIZE_8BIT,
+				                &task_i2c_rx_dta.buffer[0],
+				                task_i2c_rx_dta.len,
+				                HAL_MAX_DELAY);
+			}
+			else
+			{
+				LOGGER_INFO("I2C RX type error");
+			}
+
+			p_task_i2c_rx_dta->last_rx = task_i2c_rx_dta;
+			xSemaphoreGive(p_task_i2c_rx_dta->sem_sync_rx_done);
+		}
+		else
+		{
+			LOGGER_INFO("I2C mode error");
+		}
 
 		g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
-
-    	/* Print out: Wait 250mS */
-		LOGGER_INFO(p_task_i2c_rx_wait_250mS);
-		vTaskDelay(TASK_XXXX_DEL_MAX);
 	}
 }
 

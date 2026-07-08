@@ -28,6 +28,9 @@ extern "C" {
 #define ADXL345_ADDRESS     		(0x53)
 #define ADXL345_ADDRESS_SHIFTED     (0x53 << 1)     // Ya lo dejo desplazado
 
+#define ADXL345_REG_DEVID       0x00
+#define ADXL345_DEVID_VAL       0xE5
+
 #define ADXL345_REG_POWER_CTL   0x2D
 #define ADXL345_REG_POWER_CTL_SET_IN_MEASURE   0x08
 #define ADXL345_BASE_REG_DATA      0x32     // Registro de inicio de los datos (X, Y, Z)
@@ -47,6 +50,7 @@ typedef struct {
 
 
 /********************** external data declaration ****************************/
+extern adxl345_dta_t adxl345_data;
 
 /********************** external functions declaration ***********************/
 

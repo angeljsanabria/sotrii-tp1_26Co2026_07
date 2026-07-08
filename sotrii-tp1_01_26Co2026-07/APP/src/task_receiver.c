@@ -45,6 +45,7 @@
 #include "board.h"
 #include "app.h"
 #include "task_i2c_interface.h"
+#include "adxl345_data.h"
 
 /********************** macros and definitions *******************************/
 #define G_TASK_RECEIVER_CNT_INI	0ul
@@ -73,11 +74,35 @@ void task_receiver(void *parameters)
 	LOGGER_INFO(" ");
 	LOGGER_INFO("  %s is running - Tick [mS] = %lu", pcTaskGetName(NULL), xTaskGetTickCount());
 
+	task_i2c_tx_rx_dta_t rx;
+
+	rx.address = ADXL345_ADDRESS;
+
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
     {
 		/* Update Task Counter */
 		g_task_receiver_cnt++;
+
+		if (adxl345_data.initialized == false)
+		{
+			xSemaphoreTake(h_sem_adxl_init_write_done, portMAX_DELAY);
+
+			rx.read_add = ADXL345_REG_POWER_CTL;
+			rx.rx_type  = I2C_RX_MAP_REG;
+			rx.len      = 1;
+			read_i2c(&hi2c1, &rx);
+
+			if (rx.buffer[0] == ADXL345_REG_POWER_CTL_SET_IN_MEASURE)
+			{
+				adxl345_data.initialized = true;
+				LOGGER_INFO("   ==> ADXL345 init OK (POWER_CTL = 0x%02X)", rx.buffer[0]);
+			}
+		}
+		else
+		{
+			/* lectura periodica de ejes: pendiente */
+		}
 
     	/* Print out: Wait 250mS */
 		LOGGER_INFO(p_task_receiver_wait_250mS);

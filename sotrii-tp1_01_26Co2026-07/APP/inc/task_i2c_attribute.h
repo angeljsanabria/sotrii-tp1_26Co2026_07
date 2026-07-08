@@ -76,7 +76,10 @@ typedef struct
 	TaskHandle_t		task_rx;
 	QueueHandle_t		queue_rx;
 
-	SemaphoreHandle_t   sync_done;
+	SemaphoreHandle_t   sem_sync_tx_done;	// para sync
+	SemaphoreHandle_t 	sem_sync_rx_done;
+
+	task_i2c_tx_rx_dta_t	last_rx;		// retorno del sync
 
 	i2c_mode_hal_driver_t 	mode_use;
 	i2c_pattern_driver_t 	pattern_use;			// Patron de diseño seleccionado
@@ -90,10 +93,19 @@ typedef struct
 //} task_i2c_tx_dta_t;
 
 /* Structure of I2C Rx y Tx */
+// Defino tambien el tipo de lectura, el driver de PN532 no hace lectura de registros y el de ADXL345 si.
+typedef enum
+{
+    I2C_RX_SIMPLE = 0,       /* Master_Receive directo (PN532) (ejemplo el ACK/NACK)*/
+    I2C_RX_MAP_REG,          /* read reg + N bytes (ADXL345) (ejemplo el Power CTL) */
+} i2c_rx_type_t;
+
+
 typedef struct
 {
 	uint16_t	address;
 	uint8_t		read_add;
+	i2c_rx_type_t rx_type;
 	uint8_t		len;
 	uint8_t     buffer[I2C_IN_BUFFER_MAX];
 } task_i2c_tx_rx_dta_t;

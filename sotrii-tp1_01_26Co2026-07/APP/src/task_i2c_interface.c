@@ -42,13 +42,14 @@
 #include "dwt.h"
 
 /* Application & Tasks includes */
+#include <string.h>
+
 #include "board.h"
 #include "app.h"
 #include "app_it.h"
 #include "task_i2c.h"
 #include "task_i2c_attribute.h"
 #include "task_i2c_interface.h"
-#include "logger.h"
 
 /********************** macros and definitions *******************************/
 
@@ -92,9 +93,13 @@ void open_i2c(I2C_HandleTypeDef *h_i2c_device, i2c_mode_hal_driver_t set_mode, i
 	vQueueAddToRegistry(p_task_i2c_dta->queue_rx, "Task I2C Rx Queue Handle");
 
 	// Creo semaforo binario usado para sync // Puedo meter condicion que solo se cree en I2C_PATTERN_SYNC; Sino queda en null
-	p_task_i2c_dta->sync_done  = xSemaphoreCreateBinary();
-	configASSERT(NULL != p_task_i2c_dta->sync_done);
-	vQueueAddToRegistry(h_entry_a_bin_sem, "Semaforo binario para SYNC");
+	p_task_i2c_dta->sem_sync_tx_done  = xSemaphoreCreateBinary();
+	configASSERT(NULL != p_task_i2c_dta->sem_sync_tx_done);
+	vQueueAddToRegistry(p_task_i2c_dta->sem_sync_tx_done, "Semaforo binario para SYNC en tx");
+
+	p_task_i2c_dta->sem_sync_rx_done  = xSemaphoreCreateBinary();
+	configASSERT(NULL != p_task_i2c_dta->sem_sync_rx_done);
+	vQueueAddToRegistry(p_task_i2c_dta->sem_sync_rx_done , "Semaforo binario para SYNC en rx");
 
     /* Before a task is executed it must be explicitly created.
 	 * Check the task was created successfully. */
@@ -127,8 +132,9 @@ void release_i2c(I2C_HandleTypeDef *h_i2c_device)
 
 		vTaskDelete(p_task_i2c_dta->task_tx);
 		vTaskDelete(p_task_i2c_dta->task_rx);
-		// TODO BOrrar el semaforo de SYNC
-		vSemaphoreDelete(p_task_i2c_dta->sem_sync);
+
+		vSemaphoreDelete(p_task_i2c_dta->sem_sync_tx_done);
+		vSemaphoreDelete(p_task_i2c_dta->sem_sync_rx_done);
 	}
 }
 
@@ -145,6 +151,7 @@ void write_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *tx_data)
 
 		if(p_task_i2c_dta->pattern_use == I2C_PATTERN_SYNC){
 			xQueueSend(p_task_i2c_dta->queue_tx, tx_data, portMAX_DELAY);
+			xSemaphoreTake(p_task_i2c_dta->sem_sync_tx_done, portMAX_DELAY);
 //		}else if (p_task_i2c_dta.pattern_use == I2C_PATTERN_ASYNC){
 //			LOGGER_INFO("I2C Patron no soportado");
 //
@@ -155,14 +162,28 @@ void write_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *tx_data)
 			LOGGER_INFO("I2C Patron error");
 		}
 
-		xQueueSend(p_task_i2c_dta->queue_tx, tx_data, portMAX_DELAY);
 	}
 }
 
-void read_i2c(I2C_HandleTypeDef *h_i2c_device)
+void read_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *rx_data)
 {
-	/* Prevent unused argument(s) compilation warning */
-	UNUSED(h_i2c_device);
+	task_i2c_dta_t *p_task_i2c_dta = &task_i2c_dta;
+
+	p_task_i2c_dta->device_id = h_i2c_device;
+
+	if (p_task_i2c_dta->device_id == h_i2c_device)
+	{
+		if (p_task_i2c_dta->pattern_use == I2C_PATTERN_SYNC)
+		{
+			xQueueSend(p_task_i2c_dta->queue_rx, rx_data, portMAX_DELAY);
+			xSemaphoreTake(p_task_i2c_dta->sem_sync_rx_done, portMAX_DELAY);
+			(void)memcpy(rx_data->buffer, p_task_i2c_dta->last_rx.buffer, rx_data->len);
+		}
+		else
+		{
+			LOGGER_INFO("I2C Patron error");
+		}
+	}
 }
 
 void ioctl_i2c(I2C_HandleTypeDef *h_i2c_device)

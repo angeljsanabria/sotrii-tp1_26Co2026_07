@@ -73,6 +73,7 @@ uint32_t g_app_stack_overflow_cnt;
 /* Declare a variable of type SemaphoreHandle_t (binary or counting) or mutex.
  * This is used to reference the semaphore that is used to synchronize a thread
  * with other thread or to ensure mutual exclusive access to...*/
+SemaphoreHandle_t h_sem_adxl_init_write_done;
 
 /* Declare a variable of type TaskHandle_t. This is used to reference threads. */
 TaskHandle_t h_task_sender;
@@ -107,6 +108,9 @@ void app_init(void)
 	/* The semaphore is created in the 'empty' state, meaning the semaphore
 	 * must first be given using the xSemaphoreGive() API function before it can
 	 * subsequently be taken (obtained) using the xSemaphoreTake() function */
+	h_sem_adxl_init_write_done = xSemaphoreCreateBinary();
+	configASSERT(NULL != h_sem_adxl_init_write_done);
+	vQueueAddToRegistry(h_sem_adxl_init_write_done, "Sem ADXL init write done");
 
 	/* Add threads, ... */
     BaseType_t ret;

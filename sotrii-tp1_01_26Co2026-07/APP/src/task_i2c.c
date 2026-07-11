@@ -146,9 +146,10 @@ void task_i2c_rx(void *parameters)
 		/* Update Task Counter */
 		g_task_xxxx_rx_cnt++;
 
-		cycle_counter_reset();
-
 		xQueueReceive(p_task_i2c_rx_dta->queue_rx, &task_i2c_rx_dta, portMAX_DELAY);
+
+		/* WCET: medir solo desde que llega el pedido (no incluye espera en cola vacia) */
+		cycle_counter_reset();
 
 		if (p_task_i2c_rx_dta->mode_use == I2C_MODE_POLLING)
 		{
@@ -182,9 +183,10 @@ void task_i2c_rx(void *parameters)
 				p_task_i2c_rx_dta->last_rx.len = 0;		// Con esto indico que no se recibieron datos
 				LOGGER_INFO("I2C RX error");
 			}
-			
+
 			xSemaphoreGive(p_task_i2c_rx_dta->sem_sync_rx_done);
 
+			g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
 
 			LOGGER_INFO("I2C RX from %u len %u: ", p_task_i2c_rx_dta->last_rx.address, p_task_i2c_rx_dta->last_rx.len);
 			if(p_task_i2c_rx_dta->last_rx.len){
@@ -196,9 +198,8 @@ void task_i2c_rx(void *parameters)
 		else
 		{
 			LOGGER_INFO("I2C mode error");
+			g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
 		}
-
-		g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
 	}
 }
 

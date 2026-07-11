@@ -324,3 +324,31 @@ El codigo base implementa el **esqueleto de un device driver I2C sobre FreeRTOS*
 
 La arquitectura anticipa el objetivo del TP: que el acceso al periferico I2C quede encapsulado, sincronizado por colas, y sea transparente para las tareas de aplicacion — patron habitual en sistemas embebidos con RTOS en entornos industriales.
 
+## Paso 06: Device Driver I2C de FreeRTOS (Polling + Sync)
+
+Diseno, implementacion y uso del device driver I2C sobre FreeRTOS en la NUCLEO-L4R5ZI, con acelerometro ADXL345 conectado por I2C1. Se depreco el uso de Serial LCD I2C Module–PCF8574.
+
+- Aplicacion: uso del driver con ADXL345; Inicio de dispositivo con seteo en registro POWER y despues lectura de registros de aceleracion tipo mapa.
+- Patrón sincrono: El patron garantiza que la tarea que llama `write_i2c()` o `read_i2c()` espera hasta que el gatekeeper termino la operacion HAL antes de continuar.
+- Tipo polling: Las tareas gatekeeper ejecutan las funciones HAL bloqueantes (`HAL_MAX_DELAY`):
+- Almacenamiento en queue.
+- Tareas Gatekeeper: Creadas en `open_i2c()` con prioridad `tskIDLE_PRIORITY + 1` y parametro `&task_i2c_dta`.
+- Tipo de recepcion I2C: Lectura de mapeo.
+- Estructura del dispositivo: Definida en `task_i2c_attribute.h` como `task_i2c_dta_t`:
+- Cada mensaje en las colas es un `task_i2c_tx_rx_dta_t`
+- Funciones de interfaz del driver: API publica en `task_i2c_interface.h` / `task_i2c_interface.c`:
+- Desarrollo de `ioctl_i2c()`: No fue necesario el uso para este TP.
+
+
+### WCET — medicion y registro
+
+Medicion con DWT, STM32CubeIDE Live Expressions (NUCLEO-L4R5ZI, ADXL345):
+
+| Medicion | Variable | WCET [us] |
+|----------|----------|-----------|
+| Gatekeeper TX | `g_task_xxxx_tx_runtime_us` | 301 |
+| Gatekeeper RX | `g_task_xxxx_rx_runtime_us` | 851 |
+| `read_i2c()` Sync | `g_read_i2c_wcet_us` | 978 |
+
+Gatekeeper RX: cronometro despues de `xQueueReceive()` (no incluye espera en cola).
+`read_i2c()` Sync: incluye encolado + semaforo + gatekeeper + `memcpy` (por eso > 851 us).

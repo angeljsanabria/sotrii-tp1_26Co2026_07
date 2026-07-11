@@ -189,6 +189,7 @@ void read_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *rx_data)
 void ioctl_i2c(I2C_HandleTypeDef *h_i2c_device)
 {
 	/* Prevent unused argument(s) compilation warning */
+	// No necesario para este TP
 	UNUSED(h_i2c_device);
 }
 

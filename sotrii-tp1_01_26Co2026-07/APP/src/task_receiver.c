@@ -62,6 +62,7 @@ const char *p_task_receiver_wait_250mS		= "   ==> Task RECEIVER - Wait:   250mS"
 
 /********************** external data declaration ****************************/
 uint32_t g_task_receiver_cnt;
+uint32_t g_read_i2c_wcet_us;	/* WCET read_i2c() Sync: Live Expression en CubeIDE */
 
 /********************** external functions definition ************************/
 /* Task thread */
@@ -92,7 +93,9 @@ void task_receiver(void *parameters)
 			rx.read_add = ADXL345_REG_POWER_CTL;
 			rx.rx_type  = I2C_RX_MAP_REG;
 			rx.len      = 1;
+			cycle_counter_reset();
 			read_i2c(&hi2c1, &rx);
+			g_read_i2c_wcet_us = cycle_counter_get_time_us();
 
 			if (rx.len > 0){
 				if (rx.buffer[0] == ADXL345_REG_POWER_CTL_SET_IN_MEASURE)
@@ -110,7 +113,9 @@ void task_receiver(void *parameters)
 			rx.read_add = ADXL345_BASE_REG_DATA;
 			rx.rx_type  = I2C_RX_MAP_REG;
 			rx.len      = ADXL345_DATA_LENGTH;
+			cycle_counter_reset();
 			read_i2c(&hi2c1, &rx);
+			g_read_i2c_wcet_us = cycle_counter_get_time_us();
 
 			if (rx.len > 0){
 				adxl345_data.sample.x = (int16_t)((uint16_t)rx.buffer[0] | ((uint16_t)rx.buffer[1] << 8));

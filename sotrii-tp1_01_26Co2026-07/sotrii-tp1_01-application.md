@@ -352,3 +352,59 @@ Medicion con DWT, STM32CubeIDE Live Expressions (NUCLEO-L4R5ZI, ADXL345):
 
 Gatekeeper RX: cronometro despues de `xQueueReceive()` (no incluye espera en cola).
 `read_i2c()` Sync: incluye encolado + semaforo + gatekeeper + `memcpy` (por eso > 851 us).
+
+### Muestra de logs
+
+```text
+[info] app_init is running - Tick [mS] = 0
+[info]  app is a RTOS - Event-Triggered Systems (ETS)
+[info]  app is a sotrii-tp1_01-application: Demo Code
+[info]  app is a (Source => CESE - Sistemas Operativos de Tiempo Real)
+[info]  
+[info] Task I2C Rx is running - Tick [mS] =   0
+[info] adxl345 INICIADO
+[info]  
+[info]   Task Sender is running - Tick [mS] = 0
+[info]  
+[info]   Task Receiver is running - Tick [mS] = 0
+[info]  
+[info] Task I2C Tx is running - Tick [mS] =   0
+[info]    ==> Task I2C TX - Wait:   250mS
+[info]    ==> Task SENDER - Wait:   250mS
+[info] I2C RX from 83 len 1: 
+[info] 08 
+[info]    ==> ADXL345 init OK (POWER_CTL = 0x08)
+[info]    ==> Task RECEIVER - Wait:   250mS
+[info]    ==> Task SENDER - Wait:   250mS
+[info] I2C RX from 83 len 6: 
+[info]    ==> ADXL345 X=-2 Y=-27 Z=218
+[info]    ==> Task RECEIVER - Wait:   250mS
+[info] FE 
+[info] FF 
+[info] E5 
+[info] FF 
+[info] DA 
+[info] 00 
+[info]    ==> Task SENDER - Wait:   250mS
+[info] I2C RX from 83 len 6: 
+[info] FF 
+[info]    ==> ADXL345 X=-1 Y=-27 Z=218
+[info]    ==> Task RECEIVER - Wait:   250mS
+[info] FF 
+[info] E5 
+[info] FF 
+[info] DA 
+[info] 00 
+[info]    ==> Task SENDER - Wait:   250mS
+[info] I2C RX from 83 len 6: 
+[info] FF 
+[info]    ==> ADXL345 X=-1 Y=-27 Z=216
+[info]    ==> Task RECEIVER - Wait:   250mS
+[info] FF 
+[info] E5 
+[info] FF 
+[info] D8 
+[info] 00 
+[info]    ==> Task SENDER - Wait:   250mS
+```
+

@@ -45,10 +45,10 @@
 #include "board.h"
 #include "app.h"
 #include "app_it.h"
-#include "task_i2c_attribute.h"
+#include "task_uart_attribute.h"
 
 /********************** macros and definitions *******************************/
-#define G_TASK_XXXX_CNT_INI			0ul
+#define G_TASK_XXXX_CNT_INI	0ul
 #define G_TASK_XXXX_RUNTIME_US_INI	0ul
 
 #define TASK_XXXX_DEL_ZERO	(pdMS_TO_TICKS(0ul))
@@ -59,12 +59,12 @@
 /********************** internal data declaration ****************************/
 
 /********************** internal functions declaration ***********************/
-void task_i2c_tx(void *parameters);
-void task_i2c_rx(void *parameters);
+void task_uart_tx(void *parameters);
+void task_uart_rx(void *parameters);
 
 /********************** internal data definition *****************************/
-const char *p_task_i2c_tx_wait_250mS	= "   ==> Task I2C TX - Wait:   250mS";
-const char *p_task_i2c_rx_wait_250mS	= "   ==> Task I2C RX - Wait:   250mS";
+const char *p_task_uart_tx_wait_250mS	= "   ==> Task UART TX - Wait:   250mS";
+const char *p_task_uart_rx_wait_250mS	= "   ==> Task UART RX - Wait:   250mS";
 
 /********************** external data declaration ****************************/
 uint32_t g_task_xxxx_tx_cnt;
@@ -74,20 +74,15 @@ uint32_t g_task_xxxx_rx_cnt;
 uint32_t g_task_xxxx_rx_runtime_us;
 
 /********************** external functions definition ************************/
-/* Task I2C TX thread */
-void task_i2c_tx(void *parameters)
+/* Task UART TX thread */
+void task_uart_tx(void *parameters)
 {
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(parameters);
+
 	/*  Declare & Initialize Task Function variables */
 	g_task_xxxx_tx_cnt = G_TASK_XXXX_CNT_INI;
 	g_task_xxxx_tx_runtime_us = G_TASK_XXXX_RUNTIME_US_INI;
-
-	task_i2c_dta_t *p_task_i2c_tx_dta = (task_i2c_dta_t *)parameters;	
-
-	/* Serial LCD I2C Module–PCF8574
-	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
-	 * https://www.ti.com/product/PCF8574
- 	 * i2c1_tx_address_rd_wr = ((address base | jumper less address) << 1) | /write
- 	 */
 
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
@@ -99,40 +94,27 @@ void task_i2c_tx(void *parameters)
 		/* Update Task Counter */
 		g_task_xxxx_tx_cnt++;
 
-		task_i2c_tx_rx_dta_t task_i2c_tx_dta;
-
 		cycle_counter_reset();
 
-		xQueueReceive(p_task_i2c_tx_dta->queue_tx, &task_i2c_tx_dta, portMAX_DELAY);
-
-
-		if(p_task_i2c_tx_dta->mode_use == I2C_MODE_POLLING){
-			HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.buffer[0], task_i2c_tx_dta.len, HAL_MAX_DELAY);
-			// Puedo ver el HAL_OK para ver si doy el semaforo o no,.
-			xSemaphoreGive(p_task_i2c_tx_dta->sem_sync_tx_done);
-		}else{
-			// los otros modos no los desarrollamos en este TP para i2c.
-			LOGGER_INFO("I2C Patron error");
-		}
-
+		HAL_GPIO_TogglePin(LED_A_PORT, LED_A_PIN);
 
 		g_task_xxxx_tx_runtime_us = cycle_counter_get_time_us();
 
     	/* Print out: Wait 250mS */
-		LOGGER_INFO(p_task_i2c_tx_wait_250mS);
+		LOGGER_INFO(p_task_uart_tx_wait_250mS);
 		vTaskDelay(TASK_XXXX_DEL_MAX);
 	}
 }
 
-/* Task I2C RX thread */
-void task_i2c_rx(void *parameters)
+/* Task UART RX thread */
+void task_uart_rx(void *parameters)
 {
-	task_i2c_dta_t *p_task_i2c_rx_dta = (task_i2c_dta_t *)parameters;
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(parameters);
 
 	/*  Declare & Initialize Task Function variables */
 	g_task_xxxx_rx_cnt = G_TASK_XXXX_CNT_INI;
 	g_task_xxxx_rx_runtime_us = G_TASK_XXXX_RUNTIME_US_INI;
-	HAL_StatusTypeDef ret = HAL_ERROR;
 
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
@@ -141,65 +123,18 @@ void task_i2c_rx(void *parameters)
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
 	{
-		task_i2c_tx_rx_dta_t task_i2c_rx_dta;
-
 		/* Update Task Counter */
 		g_task_xxxx_rx_cnt++;
 
-		xQueueReceive(p_task_i2c_rx_dta->queue_rx, &task_i2c_rx_dta, portMAX_DELAY);
-
-		/* WCET: medir solo desde que llega el pedido (no incluye espera en cola vacia) */
 		cycle_counter_reset();
 
-		if (p_task_i2c_rx_dta->mode_use == I2C_MODE_POLLING)
-		{
-			if (task_i2c_rx_dta.rx_type == I2C_RX_SIMPLE)
-			{
-				ret = HAL_I2C_Master_Receive(p_task_i2c_rx_dta->device_id,
-				                       (task_i2c_rx_dta.address << 1),
-				                       &task_i2c_rx_dta.buffer[0],
-				                       task_i2c_rx_dta.len,
-				                       HAL_MAX_DELAY);
-			}
-			else if (task_i2c_rx_dta.rx_type == I2C_RX_MAP_REG)
-			{
-				ret = HAL_I2C_Mem_Read(p_task_i2c_rx_dta->device_id,
-				                (task_i2c_rx_dta.address << 1),
-				                task_i2c_rx_dta.read_add,
-				                I2C_MEMADD_SIZE_8BIT,
-				                &task_i2c_rx_dta.buffer[0],
-				                task_i2c_rx_dta.len,
-				                HAL_MAX_DELAY);
-			}
-			else
-			{
-				LOGGER_INFO("I2C RX type error");
-			}
+		HAL_GPIO_TogglePin(LED_A_PORT, LED_A_PIN);
 
-			
-			p_task_i2c_rx_dta->last_rx = task_i2c_rx_dta;
+		g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
 
-			if(ret != HAL_OK){
-				p_task_i2c_rx_dta->last_rx.len = 0;		// Con esto indico que no se recibieron datos
-				LOGGER_INFO("I2C RX error");
-			}
-
-			xSemaphoreGive(p_task_i2c_rx_dta->sem_sync_rx_done);
-
-			g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
-
-			LOGGER_INFO("I2C RX from %u len %u: ", p_task_i2c_rx_dta->last_rx.address, p_task_i2c_rx_dta->last_rx.len);
-			if(p_task_i2c_rx_dta->last_rx.len){
-				for(uint8_t i = 0; i < p_task_i2c_rx_dta->last_rx.len; i++){
-					LOGGER_INFO("%02X ", p_task_i2c_rx_dta->last_rx.buffer[i]);
-				}
-			}
-		}
-		else
-		{
-			LOGGER_INFO("I2C mode error");
-			g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
-		}
+    	/* Print out: Wait 250mS */
+		LOGGER_INFO(p_task_uart_rx_wait_250mS);
+		vTaskDelay(TASK_XXXX_DEL_MAX);
 	}
 }
 

@@ -44,45 +44,53 @@
 /* Application & Tasks includes */
 #include "board.h"
 #include "app.h"
+#include "app_it.h"
+#include "task_uart.h"
+#include "task_uart_attribute.h"
 #include "task_uart_interface.h"
 
 /********************** macros and definitions *******************************/
-#define G_TASK_SENDER_CNT_INI	0ul
 
-#define TASK_SENDER_DEL_ZERO	(pdMS_TO_TICKS(0ul))
-#define TASK_SENDER_DEL_MAX		(pdMS_TO_TICKS(250ul))
+/********************** internal data declaration ****************************/
 
 /********************** internal data declaration ****************************/
 
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
-const char *p_task_sender_wait_250mS		= "   ==> Task SENDER - Wait:   250mS";
 
 /********************** external data declaration ****************************/
-uint32_t g_task_sender_cnt;
 
 /********************** external functions definition ************************/
-/* Task thread */
-void task_sender(void *parameters)
+/* Interface functions */
+void open_uart(UART_HandleTypeDef *h_uart_device)
 {
-	/*  Declare & Initialize Task Function variables */
-	g_task_sender_cnt = G_TASK_SENDER_CNT_INI;
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(h_uart_device);
+}
 
-	/* Print out: Task Initialized */
-	LOGGER_INFO(" ");
-	LOGGER_INFO("  %s is running - Tick [mS] = %lu", pcTaskGetName(NULL), xTaskGetTickCount());
+void release_uart(UART_HandleTypeDef *h_uart_device)
+{
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(h_uart_device);
+}
 
-	/* As per most tasks, this task is implemented in an infinite loop. */
-	for (;;)
-	{
-		/* Update Task Counter */
-		g_task_sender_cnt++;
+void write_uart(UART_HandleTypeDef *h_uart_device)
+{
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(h_uart_device);
+}
 
-    	/* Print out: Wait 250mS */
-		LOGGER_INFO(p_task_sender_wait_250mS);
-		vTaskDelay(TASK_SENDER_DEL_MAX);
-	}
+void read_uart(UART_HandleTypeDef *h_uart_device)
+{
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(h_uart_device);
+}
+
+void ioctl_uart(UART_HandleTypeDef *h_uart_device)
+{
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(h_uart_device);
 }
 
 /********************** end of file ******************************************/

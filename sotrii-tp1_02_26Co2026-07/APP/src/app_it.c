@@ -44,6 +44,8 @@
 #include "board.h"
 
 /********************** macros and definitions *******************************/
+#define HAL_XXXX_CALLBACK_CNT_INI			0ul
+#define HAL_XXXX_CALLBACK_RUNTIME_US_INI	0ul
 
 /********************** internal data declaration ****************************/
 
@@ -52,6 +54,9 @@
 /********************** internal data definition *****************************/
 
 /********************** external data declaration ****************************/
+volatile bool hal_xxxx_callback_flag;
+volatile uint32_t hal_xxxx_callback_cnt;
+volatile uint32_t hal_xxxx_callback_runtime_us;
 
 /********************** external functions definition ************************/
 void app_it_init(void)
@@ -60,6 +65,10 @@ void app_it_init(void)
 
 	/* Protect shared resource */
 	__asm("CPSID i");	/* disable interrupts */
+
+	hal_xxxx_callback_flag = false;
+	hal_xxxx_callback_cnt = HAL_XXXX_CALLBACK_CNT_INI;
+	hal_xxxx_callback_runtime_us = HAL_XXXX_CALLBACK_RUNTIME_US_INI;
 
 	__asm("CPSIE i");	/* enable interrupts */
 }
@@ -75,6 +84,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	if (GPIO_Pin == BTN_A_PIN)
 	{
 		/* Work to be done. */
+	}
+}
+
+/**
+  * @brief  Tx Transfer completed callbacks.
+  * @param  huart  Pointer to a UART_HandleTypeDef structure that contains
+  *                the configuration information for the specified UART module.
+  * @retval None
+  */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	// Check which version of the uart triggered this callback
+	if (huart->Instance == USART2)
+	{
+		hal_xxxx_callback_flag = true;
+		hal_xxxx_callback_cnt++;
+
+		hal_xxxx_callback_runtime_us = cycle_counter_get_time_us();
 	}
 }
 

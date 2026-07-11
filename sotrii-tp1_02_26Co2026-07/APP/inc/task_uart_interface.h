@@ -32,8 +32,8 @@
  * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
  */
 
-#ifndef TASK_I2C_ATTRIBUTE_H_
-#define TASK_I2C_ATTRIBUTE_H_
+#ifndef TASK_UART_INTERFACE_H_
+#define TASK_UART_INTERFACE_H_
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -45,83 +45,23 @@ extern "C" {
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
-/* Structure of I2C Rx y Tx */
-// Config
-#define I2C_IN_BUFFER_MAX  		16		// para buffer de lectura
-
-// Defino tambien el tipo de lectura, el driver de PN532 no hace lectura de registros y el de ADXL345 si.
-typedef enum
-{
-    I2C_RX_SIMPLE = 0,       /* Master_Receive directo (PN532) (ejemplo el ACK/NACK)*/
-    I2C_RX_MAP_REG,          /* read reg + N bytes (ADXL345) (ejemplo el Power CTL) */
-} i2c_rx_type_t;
-
-
-typedef struct
-{
-	uint16_t	address;
-	uint8_t		read_add;
-	i2c_rx_type_t rx_type;
-	uint8_t		len;
-	uint8_t     buffer[I2C_IN_BUFFER_MAX];
-} task_i2c_tx_rx_dta_t;
-
-
-typedef enum
-{
-    I2C_MODE_POLLING = 0,
-    I2C_MODE_NOT_SUPPORTED,
-	I2C_MODE_INTERRUPT,		// Los dejo definidos pero no los usamos en este TP
-    I2C_MODE_DMA,
-} i2c_mode_hal_driver_t;
-
-//Synchronous , Asynchronous , Latest Input Only
-typedef enum
-{
-    I2C_PATTERN_SYNC = 0,
-    I2C_PATTERN_NOT_SUPPORTED,
-    I2C_PATTERN_ASYNC,		// Los dejo definidos pero no los usamos en este TP
-    I2C_PATERN_LASTEST_INPUT_ONLY,	
-} i2c_pattern_driver_t;
-
-
-/* Structure of Task */
-typedef struct
-{
-	I2C_HandleTypeDef * device_id;
-
-	TaskHandle_t		task_tx;
-	QueueHandle_t		queue_tx;
-
-	TaskHandle_t		task_rx;
-	QueueHandle_t		queue_rx;
-
-	SemaphoreHandle_t   sem_sync_tx_done;	// para sync
-	SemaphoreHandle_t 	sem_sync_rx_done;
-
-	task_i2c_tx_rx_dta_t	last_rx;		// retorno del sync
-
-	i2c_mode_hal_driver_t 	mode_use;
-	i2c_pattern_driver_t 	pattern_use;			// Patron de diseño seleccionado
-} task_i2c_dta_t;
-
-/* Structure of I2C Tx */
-//typedef struct
-//{
-//	uint16_t	address;
-//	uint8_t		data;
-//} task_i2c_tx_dta_t;
-
 
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
+extern void open_uart(UART_HandleTypeDef *h_uart_device);
+extern void release_uart(UART_HandleTypeDef *h_uart_device);
+
+extern void write_uart(UART_HandleTypeDef *h_uart_device);
+extern void read_uart(UART_HandleTypeDef *h_uart_device);
+
+extern void ioctl_uart(UART_HandleTypeDef *h_uart_device);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TASK_I2C_ATTRIBUTE_H_ */
+#endif /* TASK_UART_INTERFACE_H_ */
 
 /********************** end of file ******************************************/

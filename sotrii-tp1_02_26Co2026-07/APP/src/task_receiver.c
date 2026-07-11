@@ -44,8 +44,7 @@
 /* Application & Tasks includes */
 #include "board.h"
 #include "app.h"
-#include "task_i2c_interface.h"
-#include "adxl345_data.h"
+#include "task_uart_interface.h"
 
 /********************** macros and definitions *******************************/
 #define G_TASK_RECEIVER_CNT_INI	0ul
@@ -62,7 +61,6 @@ const char *p_task_receiver_wait_250mS		= "   ==> Task RECEIVER - Wait:   250mS"
 
 /********************** external data declaration ****************************/
 uint32_t g_task_receiver_cnt;
-uint32_t g_read_i2c_wcet_us;	/* WCET read_i2c() Sync: Live Expression en CubeIDE */
 
 /********************** external functions definition ************************/
 /* Task thread */
@@ -75,60 +73,11 @@ void task_receiver(void *parameters)
 	LOGGER_INFO(" ");
 	LOGGER_INFO("  %s is running - Tick [mS] = %lu", pcTaskGetName(NULL), xTaskGetTickCount());
 
-	task_i2c_tx_rx_dta_t rx;
-
-	rx.address = ADXL345_ADDRESS;
-
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
     {
 		/* Update Task Counter */
 		g_task_receiver_cnt++;
-
-		if (adxl345_data.initialized == false)
-		{
-			// Inicacion de dispositivo
-			xSemaphoreTake(h_sem_adxl_init_write_done, portMAX_DELAY);
-
-			rx.read_add = ADXL345_REG_POWER_CTL;
-			rx.rx_type  = I2C_RX_MAP_REG;
-			rx.len      = 1;
-			cycle_counter_reset();
-			read_i2c(&hi2c1, &rx);
-			g_read_i2c_wcet_us = cycle_counter_get_time_us();
-
-			if (rx.len > 0){
-				if (rx.buffer[0] == ADXL345_REG_POWER_CTL_SET_IN_MEASURE)
-				{
-					adxl345_data.initialized = true;
-					LOGGER_INFO("   ==> ADXL345 init OK (POWER_CTL = 0x%02X)", rx.buffer[0]);
-				}
-			}
-		}
-		else
-		{
-			// Lectura de ejes si esta iniciado
-			// xSemaphoreTake(h_sem_adxl_init_write_done, portMAX_DELAY);
-
-			rx.read_add = ADXL345_BASE_REG_DATA;
-			rx.rx_type  = I2C_RX_MAP_REG;
-			rx.len      = ADXL345_DATA_LENGTH;
-			cycle_counter_reset();
-			read_i2c(&hi2c1, &rx);
-			g_read_i2c_wcet_us = cycle_counter_get_time_us();
-
-			if (rx.len > 0){
-				adxl345_data.sample.x = (int16_t)((uint16_t)rx.buffer[0] | ((uint16_t)rx.buffer[1] << 8));
-				adxl345_data.sample.y = (int16_t)((uint16_t)rx.buffer[2] | ((uint16_t)rx.buffer[3] << 8));
-				adxl345_data.sample.z = (int16_t)((uint16_t)rx.buffer[4] | ((uint16_t)rx.buffer[5] << 8));
-				adxl345_data.is_valid_sample = true;
-			}
-		}
-
-		if(adxl345_data.is_valid_sample){
-			LOGGER_INFO("   ==> ADXL345 X=%d Y=%d Z=%d", adxl345_data.sample.x, adxl345_data.sample.y, adxl345_data.sample.z);
-			adxl345_data.is_valid_sample = false;
-		}
 
     	/* Print out: Wait 250mS */
 		LOGGER_INFO(p_task_receiver_wait_250mS);

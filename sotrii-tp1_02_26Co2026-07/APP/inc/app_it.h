@@ -49,7 +49,7 @@ extern "C" {
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
-void app_it_init(void);
+extern void app_it_init(void);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus

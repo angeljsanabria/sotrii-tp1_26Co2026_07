@@ -46,8 +46,8 @@
 #include "app_it.h"
 #include "task_sender.h"
 #include "task_receiver.h"
-#include "task_i2c.h"
-#include "task_i2c_interface.h"
+#include "task_uart.h"
+#include "task_uart_interface.h"
 
 /********************** macros and definitions *******************************/
 #define G_APP_TICK_CNT_INI				0ul
@@ -73,7 +73,6 @@ uint32_t g_app_stack_overflow_cnt;
 /* Declare a variable of type SemaphoreHandle_t (binary or counting) or mutex.
  * This is used to reference the semaphore that is used to synchronize a thread
  * with other thread or to ensure mutual exclusive access to...*/
-SemaphoreHandle_t h_sem_adxl_init_write_done;
 
 /* Declare a variable of type TaskHandle_t. This is used to reference threads. */
 TaskHandle_t h_task_sender;
@@ -108,9 +107,6 @@ void app_init(void)
 	/* The semaphore is created in the 'empty' state, meaning the semaphore
 	 * must first be given using the xSemaphoreGive() API function before it can
 	 * subsequently be taken (obtained) using the xSemaphoreTake() function */
-	h_sem_adxl_init_write_done = xSemaphoreCreateBinary();
-	configASSERT(NULL != h_sem_adxl_init_write_done);
-	vQueueAddToRegistry(h_sem_adxl_init_write_done, "Sem ADXL init write done");
 
 	/* Add threads, ... */
     BaseType_t ret;
@@ -147,13 +143,8 @@ void app_init(void)
      * one task in this state at the moment), but the currently run task ID
      * is stored in variable pxCurrentTCB */
 
-    /* I2C Device Diver Init */
-    // Init periferico en MX_I2C1_Init
-    // Crea tarea emisora y receptora task_i2c_tx task_i2c_rx
-    // El hi2c1 se va a usar para las lecturas de los ejes x,y,z del
-    // acelerometro ADXL345; En modo polling con el patron SYNC.
-    open_i2c(&hi2c1, I2C_MODE_POLLING, I2C_PATTERN_SYNC);
-
+    /* UART Device Diver Init */
+    open_uart(&huart2);
 
     /* Application Interrupts Init */
 	app_it_init();

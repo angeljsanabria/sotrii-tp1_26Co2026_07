@@ -1,0 +1,127 @@
+/*
+ * Copyright (c) 2026 Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
+ */
+
+#ifndef TASK_I2C_ATTRIBUTE_H_
+#define TASK_I2C_ATTRIBUTE_H_
+
+/********************** CPP guard ********************************************/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/********************** inclusions *******************************************/
+
+/********************** macros ***********************************************/
+
+/********************** typedef **********************************************/
+/* Structure of I2C Rx y Tx */
+// Config
+#define I2C_IN_BUFFER_MAX  		16		// para buffer de lectura
+
+// Defino tambien el tipo de lectura, el driver de PN532 no hace lectura de registros y el de ADXL345 si.
+typedef enum
+{
+    I2C_RX_SIMPLE = 0,       /* Master_Receive directo (PN532) (ejemplo el ACK/NACK)*/
+    I2C_RX_MAP_REG,          /* read reg + N bytes (ADXL345) (ejemplo el Power CTL) */
+} i2c_rx_type_t;
+
+
+typedef struct
+{
+	uint16_t	address;
+	uint8_t		read_add;
+	i2c_rx_type_t rx_type;
+	uint8_t		len;
+	uint8_t     buffer[I2C_IN_BUFFER_MAX];
+} task_i2c_tx_rx_dta_t;
+
+
+typedef enum
+{
+    I2C_MODE_POLLING = 0,
+    I2C_MODE_NOT_SUPPORTED,
+	I2C_MODE_INTERRUPT,		// Los dejo definidos pero no los usamos en este TP
+    I2C_MODE_DMA,
+} i2c_mode_hal_driver_t;
+
+//Synchronous , Asynchronous , Latest Input Only
+typedef enum
+{
+    I2C_PATTERN_SYNC = 0,
+    I2C_PATTERN_NOT_SUPPORTED,
+    I2C_PATTERN_ASYNC,		// Los dejo definidos pero no los usamos en este TP
+    I2C_PATERN_LASTEST_INPUT_ONLY,	
+} i2c_pattern_driver_t;
+
+
+/* Structure of Task */
+typedef struct
+{
+	I2C_HandleTypeDef * device_id;
+
+	TaskHandle_t		task_tx;
+	QueueHandle_t		queue_tx;
+
+	TaskHandle_t		task_rx;
+	QueueHandle_t		queue_rx;
+
+	SemaphoreHandle_t   sem_sync_tx_done;	// para sync
+	SemaphoreHandle_t 	sem_sync_rx_done;
+
+	task_i2c_tx_rx_dta_t	last_rx;		// retorno del sync
+
+	i2c_mode_hal_driver_t 	mode_use;
+	i2c_pattern_driver_t 	pattern_use;			// Patron de diseño seleccionado
+} task_i2c_dta_t;
+
+/* Structure of I2C Tx */
+//typedef struct
+//{
+//	uint16_t	address;
+//	uint8_t		data;
+//} task_i2c_tx_dta_t;
+
+
+/********************** external data declaration ****************************/
+
+/********************** external functions declaration ***********************/
+
+/********************** End of CPP guard *************************************/
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* TASK_I2C_ATTRIBUTE_H_ */
+
+/********************** end of file ******************************************/

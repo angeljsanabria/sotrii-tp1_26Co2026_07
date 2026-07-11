@@ -45,8 +45,28 @@ extern "C" {
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
+/* Structure of I2C Rx y Tx */
 // Config
 #define I2C_IN_BUFFER_MAX  		16		// para buffer de lectura
+
+// Defino tambien el tipo de lectura, el driver de PN532 no hace lectura de registros y el de ADXL345 si.
+typedef enum
+{
+    I2C_RX_SIMPLE = 0,       /* Master_Receive directo (PN532) (ejemplo el ACK/NACK)*/
+    I2C_RX_MAP_REG,          /* read reg + N bytes (ADXL345) (ejemplo el Power CTL) */
+} i2c_rx_type_t;
+
+
+typedef struct
+{
+	uint16_t	address;
+	uint8_t		read_add;
+	i2c_rx_type_t rx_type;
+	uint8_t		len;
+	uint8_t     buffer[I2C_IN_BUFFER_MAX];
+} task_i2c_tx_rx_dta_t;
+
+
 typedef enum
 {
     I2C_MODE_POLLING = 0,
@@ -91,24 +111,6 @@ typedef struct
 //	uint16_t	address;
 //	uint8_t		data;
 //} task_i2c_tx_dta_t;
-
-/* Structure of I2C Rx y Tx */
-// Defino tambien el tipo de lectura, el driver de PN532 no hace lectura de registros y el de ADXL345 si.
-typedef enum
-{
-    I2C_RX_SIMPLE = 0,       /* Master_Receive directo (PN532) (ejemplo el ACK/NACK)*/
-    I2C_RX_MAP_REG,          /* read reg + N bytes (ADXL345) (ejemplo el Power CTL) */
-} i2c_rx_type_t;
-
-
-typedef struct
-{
-	uint16_t	address;
-	uint8_t		read_add;
-	i2c_rx_type_t rx_type;
-	uint8_t		len;
-	uint8_t     buffer[I2C_IN_BUFFER_MAX];
-} task_i2c_tx_rx_dta_t;
 
 
 /********************** external data declaration ****************************/

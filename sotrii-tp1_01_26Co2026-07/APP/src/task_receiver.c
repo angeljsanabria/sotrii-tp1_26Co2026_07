@@ -86,6 +86,7 @@ void task_receiver(void *parameters)
 
 		if (adxl345_data.initialized == false)
 		{
+			// Inicacion de dispositivo
 			xSemaphoreTake(h_sem_adxl_init_write_done, portMAX_DELAY);
 
 			rx.read_add = ADXL345_REG_POWER_CTL;
@@ -93,15 +94,35 @@ void task_receiver(void *parameters)
 			rx.len      = 1;
 			read_i2c(&hi2c1, &rx);
 
-			if (rx.buffer[0] == ADXL345_REG_POWER_CTL_SET_IN_MEASURE)
-			{
-				adxl345_data.initialized = true;
-				LOGGER_INFO("   ==> ADXL345 init OK (POWER_CTL = 0x%02X)", rx.buffer[0]);
+			if (rx.len > 0){
+				if (rx.buffer[0] == ADXL345_REG_POWER_CTL_SET_IN_MEASURE)
+				{
+					adxl345_data.initialized = true;
+					LOGGER_INFO("   ==> ADXL345 init OK (POWER_CTL = 0x%02X)", rx.buffer[0]);
+				}
 			}
 		}
 		else
 		{
-			/* lectura periodica de ejes: pendiente */
+			// Lectura de ejes si esta iniciado
+			// xSemaphoreTake(h_sem_adxl_init_write_done, portMAX_DELAY);
+
+			rx.read_add = ADXL345_BASE_REG_DATA;
+			rx.rx_type  = I2C_RX_MAP_REG;
+			rx.len      = ADXL345_DATA_LENGTH;
+			read_i2c(&hi2c1, &rx);
+
+			if (rx.len > 0){
+				adxl345_data.sample.x = (int16_t)((uint16_t)rx.buffer[0] | ((uint16_t)rx.buffer[1] << 8));
+				adxl345_data.sample.y = (int16_t)((uint16_t)rx.buffer[2] | ((uint16_t)rx.buffer[3] << 8));
+				adxl345_data.sample.z = (int16_t)((uint16_t)rx.buffer[4] | ((uint16_t)rx.buffer[5] << 8));
+				adxl345_data.is_valid_sample = true;
+			}
+		}
+
+		if(adxl345_data.is_valid_sample){
+			LOGGER_INFO("   ==> ADXL345 X=%d Y=%d Z=%d", adxl345_data.sample.x, adxl345_data.sample.y, adxl345_data.sample.z);
+			adxl345_data.is_valid_sample = false;
 		}
 
     	/* Print out: Wait 250mS */

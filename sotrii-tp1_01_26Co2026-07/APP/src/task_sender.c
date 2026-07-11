@@ -119,6 +119,9 @@ void task_sender(void *parameters)
 			write_i2c(&hi2c1, &tx);
 			xSemaphoreGive(h_sem_adxl_init_write_done);
 		}
+		else{
+
+		}
 
 
     	/* Print out: Wait 250mS */

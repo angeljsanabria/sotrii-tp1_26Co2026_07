@@ -132,6 +132,7 @@ void task_i2c_rx(void *parameters)
 	/*  Declare & Initialize Task Function variables */
 	g_task_xxxx_rx_cnt = G_TASK_XXXX_CNT_INI;
 	g_task_xxxx_rx_runtime_us = G_TASK_XXXX_RUNTIME_US_INI;
+	HAL_StatusTypeDef ret = HAL_ERROR;
 
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
@@ -153,7 +154,7 @@ void task_i2c_rx(void *parameters)
 		{
 			if (task_i2c_rx_dta.rx_type == I2C_RX_SIMPLE)
 			{
-				HAL_I2C_Master_Receive(p_task_i2c_rx_dta->device_id,
+				ret = HAL_I2C_Master_Receive(p_task_i2c_rx_dta->device_id,
 				                       (task_i2c_rx_dta.address << 1),
 				                       &task_i2c_rx_dta.buffer[0],
 				                       task_i2c_rx_dta.len,
@@ -161,7 +162,7 @@ void task_i2c_rx(void *parameters)
 			}
 			else if (task_i2c_rx_dta.rx_type == I2C_RX_MAP_REG)
 			{
-				HAL_I2C_Mem_Read(p_task_i2c_rx_dta->device_id,
+				ret = HAL_I2C_Mem_Read(p_task_i2c_rx_dta->device_id,
 				                (task_i2c_rx_dta.address << 1),
 				                task_i2c_rx_dta.read_add,
 				                I2C_MEMADD_SIZE_8BIT,
@@ -174,8 +175,23 @@ void task_i2c_rx(void *parameters)
 				LOGGER_INFO("I2C RX type error");
 			}
 
+			
 			p_task_i2c_rx_dta->last_rx = task_i2c_rx_dta;
+
+			if(ret != HAL_OK){
+				p_task_i2c_rx_dta->last_rx.len = 0;		// Con esto indico que no se recibieron datos
+				LOGGER_INFO("I2C RX error");
+			}
+			
 			xSemaphoreGive(p_task_i2c_rx_dta->sem_sync_rx_done);
+
+
+			LOGGER_INFO("I2C RX from %u len %u: ", p_task_i2c_rx_dta->last_rx.address, p_task_i2c_rx_dta->last_rx.len);
+			if(p_task_i2c_rx_dta->last_rx.len){
+				for(uint8_t i = 0; i < p_task_i2c_rx_dta->last_rx.len; i++){
+					LOGGER_INFO("%02X ", p_task_i2c_rx_dta->last_rx.buffer[i]);
+				}
+			}
 		}
 		else
 		{

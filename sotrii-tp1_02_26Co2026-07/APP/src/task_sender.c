@@ -42,6 +42,8 @@
 #include "dwt.h"
 
 /* Application & Tasks includes */
+#include <string.h>
+
 #include "board.h"
 #include "app.h"
 #include "task_uart_interface.h"
@@ -57,6 +59,11 @@
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
+static const char * const p_task_sender_cmd_msg_1 = "CMD1\r\n";
+static const char * const p_task_sender_cmd_msg_2 = "CMD2\r\n";
+static const char * const p_task_sender_cmd_msg_3 = "CMD3\r\n";
+static const uint8_t p_task_sender_cmd_msg_count_max = 3;
+
 const char *p_task_sender_wait_250mS		= "   ==> Task SENDER - Wait:   250mS";
 
 /********************** external data declaration ****************************/
@@ -67,6 +74,12 @@ uint32_t g_task_sender_cnt;
 void task_sender(void *parameters)
 {
 	/*  Declare & Initialize Task Function variables */
+	uint8_t cmd_idx = 0;
+	uint16_t tx_len = 0;
+	task_uart_spooler_tx_rx_dta_t tx;
+
+	UNUSED(parameters);
+
 	g_task_sender_cnt = G_TASK_SENDER_CNT_INI;
 
 	/* Print out: Task Initialized */
@@ -76,10 +89,37 @@ void task_sender(void *parameters)
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
 	{
-		/* Update Task Counter */
+		const char *p_cmd = NULL;
+
 		g_task_sender_cnt++;
 
-    	/* Print out: Wait 250mS */
+		if (cmd_idx == 0)
+		{
+			p_cmd = p_task_sender_cmd_msg_1;
+		}
+		else if (cmd_idx == 1)
+		{
+			p_cmd = p_task_sender_cmd_msg_2;
+		}
+		else
+		{
+			p_cmd = p_task_sender_cmd_msg_3;
+		}
+
+		tx_len = (uint16_t)strlen(p_cmd);
+		tx.buffer = (uint8_t *)pvPortMalloc(tx_len);
+		if (tx.buffer != NULL)
+		{
+			(void)memcpy(tx.buffer, p_cmd, tx_len);
+			tx.len = tx_len;
+			write_uart(&huart2, &tx);
+			LOGGER_INFO("   ==> Task SENDER - TX: %s", p_cmd);
+		}
+
+		// loop msgs
+		cmd_idx++;
+		if (cmd_idx >= p_task_sender_cmd_msg_count_max)		cmd_idx = 0;
+
 		LOGGER_INFO(p_task_sender_wait_250mS);
 		vTaskDelay(TASK_SENDER_DEL_MAX);
 	}

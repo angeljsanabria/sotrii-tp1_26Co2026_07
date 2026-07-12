@@ -45,6 +45,7 @@
 #include "board.h"
 #include "app.h"
 #include "task_uart_interface.h"
+#include "task_uart_attribute.h"
 
 /********************** macros and definitions *******************************/
 #define G_TASK_RECEIVER_CNT_INI	0ul
@@ -67,6 +68,10 @@ uint32_t g_task_receiver_cnt;
 void task_receiver(void *parameters)
 {
 	/*  Declare & Initialize Task Function variables */
+	task_uart_spooler_tx_rx_dta_t rx;
+
+	UNUSED(parameters);
+
 	g_task_receiver_cnt = G_TASK_RECEIVER_CNT_INI;
 
 	/* Print out: Task Initialized */
@@ -79,7 +84,17 @@ void task_receiver(void *parameters)
 		/* Update Task Counter */
 		g_task_receiver_cnt++;
 
-    	/* Print out: Wait 250mS */
+		read_uart(&huart2);
+		if (uart_get_rx_data(&rx, pdMS_TO_TICKS(UART_RX_TIMEOUT_MS) == pdTRUE))
+		{
+			LOGGER_INFO("   ==> Task RECEIVER - RX: %.*s", (int)rx.len, rx.buffer);
+			vPortFree(rx.buffer);
+		}
+		else
+		{
+			LOGGER_INFO("   ==> Task RECEIVER - RX timeout");
+		}
+
 		LOGGER_INFO(p_task_receiver_wait_250mS);
 		vTaskDelay(TASK_RECEIVER_DEL_MAX);
 	}

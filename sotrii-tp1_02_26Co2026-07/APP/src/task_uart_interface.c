@@ -77,10 +77,13 @@ void open_uart(UART_HandleTypeDef *h_uart_device, uart_mode_hal_driver_t set_mod
 	p_task_uart_dta->pattern_use = set_pattern;
 
 	p_task_uart_dta->active_tx.buffer = NULL;
-	p_task_uart_dta->active_tx.len = 0U;
+	p_task_uart_dta->active_tx.len = 0;
 	p_task_uart_dta->active_rx.buffer = NULL;
-	p_task_uart_dta->active_rx.len = 0U;
+	p_task_uart_dta->active_rx.len = 0;
 
+	/* Before a queue is used it must be explicitly created.
+	 * Check the queue was created successfully.
+     * Add queue to registry. */
 	p_task_uart_dta->queue_tx = xQueueCreate(5, sizeof(task_uart_spooler_tx_rx_dta_t));
 	configASSERT(NULL != p_task_uart_dta->queue_tx);
 	vQueueAddToRegistry(p_task_uart_dta->queue_tx, "Task UART Tx Queue Handle");
@@ -89,17 +92,23 @@ void open_uart(UART_HandleTypeDef *h_uart_device, uart_mode_hal_driver_t set_mod
 	configASSERT(NULL != p_task_uart_dta->queue_rx);
 	vQueueAddToRegistry(p_task_uart_dta->queue_rx, "Task UART Rx Queue Handle");
 
+	// Queue que trae los datos recibidos del spooler a la tarea de app
 	p_task_uart_dta->queue_rx_out = xQueueCreate(10, sizeof(task_uart_spooler_tx_rx_dta_t));
 	configASSERT(NULL != p_task_uart_dta->queue_rx_out);
 	vQueueAddToRegistry(p_task_uart_dta->queue_rx_out, "Task UART Rx Out Queue Handle");
 
+	// Indica cuando termina la IT
 	p_task_uart_dta->sem_tx_it_done = xSemaphoreCreateBinary();
 	configASSERT(NULL != p_task_uart_dta->sem_tx_it_done);
 	vQueueAddToRegistry(p_task_uart_dta->sem_tx_it_done, "Semaforo binario IT tx UART");
 
+	// Indica cuando termina la IT
 	p_task_uart_dta->sem_rx_it_done = xSemaphoreCreateBinary();
 	configASSERT(NULL != p_task_uart_dta->sem_rx_it_done);
 	vQueueAddToRegistry(p_task_uart_dta->sem_rx_it_done, "Semaforo binario IT rx UART");
+
+	// Valor de inicio
+	p_task_uart_dta->is_valid_answer = false;
 
 	ret = xTaskCreate(task_uart_tx, "Task UART Tx", (configMINIMAL_STACK_SIZE),
 			(void *)p_task_uart_dta,
@@ -138,33 +147,79 @@ void release_uart(UART_HandleTypeDef *h_uart_device)
 		vSemaphoreDelete(p_task_uart_dta->sem_rx_it_done);
 
 		p_task_uart_dta->active_tx.buffer = NULL;
-		p_task_uart_dta->active_tx.len = 0U;
+		p_task_uart_dta->active_tx.len = 0;
 		p_task_uart_dta->active_rx.buffer = NULL;
-		p_task_uart_dta->active_rx.len = 0U;
+		p_task_uart_dta->active_rx.len = 0;
 	}
 }
 
 void write_uart(UART_HandleTypeDef *h_uart_device, task_uart_spooler_tx_rx_dta_t *tx_data)
 {
-	UNUSED(h_uart_device);
-	UNUSED(tx_data);
+	task_uart_dta_t *p_task_uart_dta = &task_uart_dta;
+
+	p_task_uart_dta->device_id = h_uart_device;
+
+	if (p_task_uart_dta->device_id == h_uart_device)
+	{
+		if (p_task_uart_dta->mode_use == UART_MODE_INTERRUPT)			
+		{
+			if(p_task_uart_dta->pattern_use == UART_PATTERN_ASYNC)
+			{
+				configASSERT(NULL != tx_data);
+				configASSERT(NULL != tx_data->buffer);
+				configASSERT(0 < tx_data->len);
+				configASSERT(UART_IN_OUT_MAX_SIZE >= tx_data->len);
+				// Sin take de semaforo porque es async; No hace falta esperar a que termine la IT
+				xQueueSend(p_task_uart_dta->queue_tx, tx_data, portMAX_DELAY);
+			}
+			else
+			{
+				LOGGER_INFO("UART Patron error");
+			}
+		}
+		else 
+		{
+			LOGGER_INFO("UART Modo error");
+		}
+	}
 }
 
 void read_uart(UART_HandleTypeDef *h_uart_device)
 {
-	UNUSED(h_uart_device);
+	task_uart_dta_t *p_task_uart_dta = &task_uart_dta;
+	task_uart_spooler_tx_rx_dta_t rx_req = {0};
+
+	p_task_uart_dta->device_id = h_uart_device;
+
+	if (p_task_uart_dta->device_id == h_uart_device)
+	{
+		if (UART_MODE_INTERRUPT == p_task_uart_dta->mode_use)
+		{
+			if (UART_PATTERN_ASYNC == p_task_uart_dta->pattern_use)
+			{
+				xQueueSend(p_task_uart_dta->queue_rx, &rx_req, portMAX_DELAY);
+			}
+			else
+			{
+				LOGGER_INFO("UART Patron error");
+			}
+		}
+		else
+		{
+			LOGGER_INFO("UART Modo error");
+		}
+	}
 }
 
 BaseType_t uart_get_rx_data(task_uart_spooler_tx_rx_dta_t *rx_data, TickType_t ticks_to_wait)
 {
-	UNUSED(rx_data);
-	UNUSED(ticks_to_wait);
-	return pdFALSE;
+	return xQueueReceive(task_uart_dta.queue_rx_out, rx_data, ticks_to_wait);
 }
 
 void ioctl_uart(UART_HandleTypeDef *h_uart_device)
 {
 	/* Prevent unused argument(s) compilation warning */
+	// No es necesario para esta actividad
 	UNUSED(h_uart_device);
 }
 

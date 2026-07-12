@@ -35,6 +35,7 @@
 /********************** inclusions *******************************************/
 /* Project includes */
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Demo includes */
 #include "logger.h"
@@ -42,12 +43,14 @@
 
 /* Application & Tasks includes */
 #include "board.h"
+#include "task_uart_attribute.h"
 
 /********************** macros and definitions *******************************/
 #define HAL_XXXX_CALLBACK_CNT_INI			0ul
 #define HAL_XXXX_CALLBACK_RUNTIME_US_INI	0ul
 
 /********************** internal data declaration ****************************/
+extern task_uart_dta_t task_uart_dta;
 
 /********************** internal functions declaration ***********************/
 
@@ -95,13 +98,33 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	// Check which version of the uart triggered this callback
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
 	if (huart->Instance == USART2)
 	{
 		hal_xxxx_callback_flag = true;
 		hal_xxxx_callback_cnt++;
-
 		hal_xxxx_callback_runtime_us = cycle_counter_get_time_us();
+
+		xSemaphoreGiveFromISR(task_uart_dta.sem_tx_it_done, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	}
+}
+
+/**
+  * @brief  Rx Transfer completed callbacks.
+  * @param  huart  Pointer to a UART_HandleTypeDef structure that contains
+  *                the configuration information for the specified UART module.
+  * @retval None
+  */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	if (huart->Instance == USART2)
+	{
+		xSemaphoreGiveFromISR(task_uart_dta.sem_rx_it_done, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
 }
 

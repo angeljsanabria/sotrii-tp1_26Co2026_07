@@ -41,10 +41,12 @@ extern "C" {
 #endif
 
 /********************** inclusions *******************************************/
+#include <stdbool.h>
 
 /********************** macros ***********************************************/
 #define UART_IN_OUT_MAX_SIZE  128
 #define UART_RX_TIMEOUT_MS    100    // Tiempo de espera de respuesta del otro dispositivo
+#define UART_RX_END_CHAR      0x0A   // Fin de linea (LF) o /n
 
 /********************** typedef **********************************************/
 typedef enum
@@ -84,6 +86,8 @@ typedef struct
 
 	SemaphoreHandle_t	sem_tx_it_done;
 	SemaphoreHandle_t	sem_rx_it_done;
+
+	bool 				is_valid_answer;
 
     task_uart_spooler_tx_rx_dta_t  active_tx;
     task_uart_spooler_tx_rx_dta_t  active_rx;

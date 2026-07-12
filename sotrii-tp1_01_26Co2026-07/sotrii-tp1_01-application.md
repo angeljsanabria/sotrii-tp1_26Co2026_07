@@ -353,6 +353,10 @@ Medicion con DWT, STM32CubeIDE Live Expressions (NUCLEO-L4R5ZI, ADXL345):
 Gatekeeper RX: cronometro despues de `xQueueReceive()` (no incluye espera en cola).
 `read_i2c()` Sync: incluye encolado + semaforo + gatekeeper + `memcpy` (por eso > 851 us).
 
+### Video del tp funcionando
+[Video / archivo en Drive](https://drive.google.com/file/d/1QX4XySN6ypw3yK2sAof4tUiLwWRKkSZm/view?usp=drive_link)
+
+
 ### Muestra de logs
 
 ```text

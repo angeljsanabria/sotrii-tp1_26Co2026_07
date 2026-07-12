@@ -144,7 +144,13 @@ void app_init(void)
      * is stored in variable pxCurrentTCB */
 
     /* UART Device Diver Init */
-    open_uart(&huart2);
+	// Init de periferico en MX_UART2_Init
+	// Crea tarea emisora y receptora task_uart_tx task_uart_rx
+	// El huart2 se va a usar para las comunicaciones con el PC.
+	// Seteos en modo interrupt y patron async.
+	// Envio de mensajes tipo string de simulacion de comandos "CMD1\r\n", "CMD2\r\n", "CMD3\r\n".
+	// Respuestas esperadas: "OK\r\n", "ERROR\r\n" (Simuladas con el terminl serial Dockligth (Windows))
+    open_uart(&huart2, UART_MODE_INTERRUPT, UART_PATTERN_ASYNC);
 
     /* Application Interrupts Init */
 	app_it_init();

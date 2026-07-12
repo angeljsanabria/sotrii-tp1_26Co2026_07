@@ -41,6 +41,7 @@ extern "C" {
 #endif
 
 /********************** inclusions *******************************************/
+#include "task_uart_attribute.h"
 
 /********************** macros ***********************************************/
 
@@ -49,11 +50,14 @@ extern "C" {
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
-extern void open_uart(UART_HandleTypeDef *h_uart_device);
+extern void open_uart(UART_HandleTypeDef *h_uart_device, uart_mode_hal_driver_t set_mode,
+		uart_pattern_driver_t set_pattern);
 extern void release_uart(UART_HandleTypeDef *h_uart_device);
 
-extern void write_uart(UART_HandleTypeDef *h_uart_device);
+extern void write_uart(UART_HandleTypeDef *h_uart_device, task_uart_spooler_tx_rx_dta_t *tx_data);
 extern void read_uart(UART_HandleTypeDef *h_uart_device);
+
+extern BaseType_t uart_get_rx_data(task_uart_spooler_tx_rx_dta_t *rx_data, TickType_t ticks_to_wait);
 
 extern void ioctl_uart(UART_HandleTypeDef *h_uart_device);
 

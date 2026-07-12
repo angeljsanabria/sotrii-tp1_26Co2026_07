@@ -43,10 +43,54 @@ extern "C" {
 /********************** inclusions *******************************************/
 
 /********************** macros ***********************************************/
+#define UART_IN_OUT_MAX_SIZE  128
+#define UART_RX_TIMEOUT_MS    100    // Tiempo de espera de respuesta del otro dispositivo
 
 /********************** typedef **********************************************/
-/* Structure of Task */
+typedef enum
+{
+    UART_MODE_INTERRUPT = 0,
+    UART_MODE_NOT_SUPPORTED,
+    UART_MODE_POLLING,
+    UART_MODE_DMA,
+} uart_mode_hal_driver_t;
 
+typedef enum
+{
+    UART_PATTERN_ASYNC = 0,
+    UART_PATTERN_NOT_SUPPORTED,
+    UART_PATTERN_SYNC,
+    UART_PATTERN_LATEST_INPUT_ONLY,
+} uart_pattern_driver_t;
+
+typedef struct
+{
+    uint8_t  *buffer;
+    uint16_t  len;
+} task_uart_spooler_tx_rx_dta_t;
+
+/* Structure of Task */
+typedef struct
+{
+	UART_HandleTypeDef *device_id;
+
+	TaskHandle_t		task_tx;
+	QueueHandle_t		queue_tx;
+
+	TaskHandle_t		task_rx;
+	QueueHandle_t		queue_rx;
+
+	QueueHandle_t		queue_rx_out;
+
+	SemaphoreHandle_t	sem_tx_it_done;
+	SemaphoreHandle_t	sem_rx_it_done;
+
+    task_uart_spooler_tx_rx_dta_t  active_tx;
+    task_uart_spooler_tx_rx_dta_t  active_rx;
+
+	uart_mode_hal_driver_t	mode_use;
+	uart_pattern_driver_t	pattern_use;
+} task_uart_dta_t;
 
 /* Structure of UART Tx */
 

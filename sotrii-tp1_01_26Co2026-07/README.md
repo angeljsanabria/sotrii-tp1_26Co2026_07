@@ -8,3 +8,7 @@
 | e2622 | Sanabria, Angel Javier| 17/05/2026| Semana 04 |
 | e2619 | Urian Florez, Brajhan Andres| 17/05/2026 | Semana 04 |
 | e2605 | Guirula, Lucia Agostina| 17/05/2026 | Semana 04 |
+
+### Video del practico funcionando:
+
+[Video / archivo en Drive](https://drive.google.com/file/d/1QX4XySN6ypw3yK2sAof4tUiLwWRKkSZm/view?usp=drive_link)

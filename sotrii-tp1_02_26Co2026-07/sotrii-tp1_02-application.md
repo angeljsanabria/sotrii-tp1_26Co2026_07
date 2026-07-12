@@ -329,20 +329,87 @@ La arquitectura anticipa el objetivo del TP: que el acceso a **USART2** quede en
 ---
 
 
-## Paso 06
+## Paso 06: Device Driver UART de FreeRTOS (Interrupt + Async)
 
-Diseñar , Implementar y Usar Device Driver UART de FreeRTOS . con las siguientes características
+Diseno, implementacion y uso del device driver UART sobre FreeRTOS en la NUCLEO-L4R5ZI, con `USART2` (`huart2`) en **PD5/PD6** (57600 baud, 8N1). Comunicacion con terminal serial **Docklight**. 
 
-- Estructura de datos que representen al dispositivo, incluyendo: device_id , device_queue , etc
-- Funciones de Interfaz: open () , release () , write () , read () , ioctl () , etc.
-- Patrón de diseño: Asynchronous
-- Gestión del periférico: Interrupt
-- Acceso al periférico: API HAL
-- Dos funciones de dispositivo para instanciar tareas del tipo: Gatekeeper (una para transmitir y una para recibir), que reciben como parámetro referencia al canal UART del MCU sobre el que el Device Driver opera.
-- - Almacenamiento de datos: Queue with Input and Output Data Spooler (allocation: Dynamic).
+- Aplicacion: `task_sender` rota comandos `"CMD1\r\n"`, `"CMD2\r\n"`, `"CMD3\r\n"` via `write_uart()`; `task_receiver` solicita lectura con `read_uart()` y obtiene la respuesta con `uart_get_rx_data()` (`"OK\r\n"` / `"ERROR\r\n"` simuladas desde Docklight).
+- Patron asincrono: `write_uart()` y `read_uart()` encolan en el driver y retornan de inmediato; la tarea de aplicacion consume el resultado RX desde `queue_rx_out` con timeout configurable.
+- Tipo interrupt: Las tareas gatekeeper usan `HAL_UART_Transmit_IT()` y `HAL_UART_Receive_IT()` (1 byte por IT); los callbacks en `app_it.c` liberan `sem_tx_it_done` / `sem_rx_it_done` con `xSemaphoreGiveFromISR()`.
+- Almacenamiento en queue con spooler dinamico: buffers TX/RX con `pvPortMalloc()` en la tarea de aplicacion o gatekeeper RX; liberados con `vPortFree()` al finalizar la operacion.
+- Tareas Gatekeeper: Creadas en `open_uart()` con prioridad `tskIDLE_PRIORITY + 1` y parametro `&task_uart_dta` (`task_uart_tx`, `task_uart_rx`).
+- Tipo de recepcion UART: Lectura byte a byte hasta `UART_RX_END_CHAR` (`0x0A`); timeout `UART_RX_TIMEOUT_MS` con `HAL_UART_AbortReceive_IT()`; entrega valida si `len > 1` e `is_valid_answer == true`.
+- Estructura del dispositivo: Definida en `task_uart_attribute.h` como `task_uart_dta_t` (`device_id`, `queue_tx`, `queue_rx`, `queue_rx_out`, `sem_*_it_done`, `active_tx`, `active_rx`, `is_valid_answer`, `mode_use`, `pattern_use`).
+- Cada mensaje en las colas es un `task_uart_spooler_tx_rx_dta_t` (`buffer`, `len`).
+- Funciones de interfaz del driver: API publica en `task_uart_interface.h` / `task_uart_interface.c` (`open_uart`, `release_uart`, `write_uart`, `read_uart`, `uart_get_rx_data`, `ioctl_uart`).
+- Desarrollo de `ioctl_uart()`: No fue necesario el uso para este TP.
+
+### WCET — medicion y registro
+
+Medicion con DWT, STM32CubeIDE Live Expressions (NUCLEO-L4R5ZI, Docklight - terminal serial -):
+
+| Medicion | Variable | WCET [us] |
+|----------|----------|-----------|
+| Gatekeeper TX | `g_task_xxxx_tx_runtime_us` | 1069 |
+| Gatekeeper RX | `g_task_xxxx_rx_runtime_us` | 100122 |
+| `read_uart()` + `uart_get_rx_data()` Async | `g_read_uart_wcet_us` | 99980 |
+
+Gatekeeper TX/RX: cronometro en `task_uart.c` despues de `xQueueReceive()` (no incluye espera en cola vacia).
+Gatekeeper RX WCET ~100 ms: dominado por `UART_RX_TIMEOUT_MS` (100 ms) al agotarse el timeout byte-a-byte sin recibir `\n`.
+`read_uart()` + `uart_get_rx_data()` Async: cronometro en `task_receiver.c` desde `read_uart()` hasta retorno de `uart_get_rx_data()`; incluye encolado, gatekeeper RX y espera en `queue_rx_out` (valor similar al gatekeeper RX en el peor caso de timeout).
+
+
+### Video del tp funcionando
+[Video / archivo en Drive](https://drive.google.com/file/d/1fqSU3TrkTfsJqmvgtzP6yJ8GMEykkGbu/view?usp=drive_link)
 
 
 
+### Muestra de logs IDE
+
+```text
+[info]  
+[info] app_init is running - Tick [mS] = 0
+[info]  app is a RTOS - Event-Triggered Systems (ETS)
+[info]  app is a sotrii-tp1_02-application: Demo Code
+[info]  app is a (Source => CESE - Sistemas Operativos de Tiempo Real)
+[info] 
+
+[info]    ==> Task RECEIVER - Wait:   250mS
+[info]    ==> Task SENDER - TX: CMD1
 
 
+[info]    ==> Task SENDER - Wait:   250mS
+[info]    ==> Task RECEIVER - RX: ERROR
 
+
+[info]    ==> Task RECEIVER - Wait:   250mS
+[info]    ==> Task SENDER - TX: CMD2
+
+
+[info]    ==> Task SENDER - Wait:   250mS
+[info]    ==> Task RECEIVER - RX: OK
+
+
+[info]    ==> Task RECEIVER - Wait:   250mS
+[info]    ==> Task SENDER - TX: CMD3
+
+
+[info]    ==> Task SENDER - Wait:   250mS
+[info]    ==> Task RECEIVER - RX: OK
+```
+
+### Muestra de logs Docklight (terminal serial)
+
+```text
+12/7/2026 14:08:35.770 [RX] - CMD1
+
+12/7/2026 14:08:35.778 [TX] - OK
+
+12/7/2026 14:08:37.288 [RX] - CMD2
+
+12/7/2026 14:08:37.292 [TX] - OK
+
+12/7/2026 14:08:38.806 [RX] - CMD3
+
+12/7/2026 14:08:38.820 [TX] - ERROR
+```

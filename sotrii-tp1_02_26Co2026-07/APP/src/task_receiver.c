@@ -62,6 +62,7 @@ const char *p_task_receiver_wait_250mS		= "   ==> Task RECEIVER - Wait:   250mS"
 
 /********************** external data declaration ****************************/
 uint32_t g_task_receiver_cnt;
+uint32_t g_read_uart_wcet_us;	/* WCET read_uart() + uart_get_rx_data() Async: Live Expression en CubeIDE */
 
 /********************** external functions definition ************************/
 /* Task thread */
@@ -84,14 +85,17 @@ void task_receiver(void *parameters)
 		/* Update Task Counter */
 		g_task_receiver_cnt++;
 
+		cycle_counter_reset();
 		read_uart(&huart2);
-		if (uart_get_rx_data(&rx, pdMS_TO_TICKS(UART_RX_TIMEOUT_MS) == pdTRUE))
+		if (uart_get_rx_data(&rx, pdMS_TO_TICKS(UART_RX_TIMEOUT_MS)) == pdTRUE)
 		{
+			g_read_uart_wcet_us = cycle_counter_get_time_us();
 			LOGGER_INFO("   ==> Task RECEIVER - RX: %.*s", (int)rx.len, rx.buffer);
 			vPortFree(rx.buffer);
 		}
 		else
 		{
+			g_read_uart_wcet_us = cycle_counter_get_time_us();
 			LOGGER_INFO("   ==> Task RECEIVER - RX timeout");
 		}
 

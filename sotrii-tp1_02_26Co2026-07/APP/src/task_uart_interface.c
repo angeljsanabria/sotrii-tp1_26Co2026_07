@@ -68,6 +68,7 @@ void open_uart(UART_HandleTypeDef *h_uart_device, uart_mode_hal_driver_t set_mod
 	BaseType_t ret;
 	task_uart_dta_t *p_task_uart_dta = &task_uart_dta;
 
+	configASSERT(NULL != h_uart_device);
 	p_task_uart_dta->device_id = h_uart_device;
 
 	configASSERT(UART_MODE_NOT_SUPPORTED >= set_mode);

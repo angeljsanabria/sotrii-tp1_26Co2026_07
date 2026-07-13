@@ -93,7 +93,7 @@ void task_uart_tx(void *parameters)
 		xQueueReceive(p_task_uart_tx_dta->queue_tx, &p_task_uart_tx_dta->active_tx, portMAX_DELAY);
 
 		cycle_counter_reset();
-		HAL_GPIO_TogglePin(LED_A_PORT, LED_A_PIN);
+
 		if (p_task_uart_tx_dta->mode_use == UART_MODE_INTERRUPT)
 		{
 			ret = HAL_UART_Transmit_IT(p_task_uart_tx_dta->device_id,

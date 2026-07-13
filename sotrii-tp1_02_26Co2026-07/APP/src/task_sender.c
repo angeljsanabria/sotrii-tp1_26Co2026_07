@@ -82,6 +82,7 @@ void task_sender(void *parameters)
 
 	g_task_sender_cnt = G_TASK_SENDER_CNT_INI;
 
+	// _TODO Bajar la prioridad a la misma que el receiver
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
 	LOGGER_INFO("  %s is running - Tick [mS] = %lu", pcTaskGetName(NULL), xTaskGetTickCount());
@@ -114,6 +115,8 @@ void task_sender(void *parameters)
 			tx.len = tx_len;
 			write_uart(&huart2, &tx);
 			LOGGER_INFO("   ==> Task SENDER - TX: %s", p_cmd);
+		}else{
+			LOGGER_INFO("   ==> Task SENDER - Fail alloc ");
 		}
 
 		// loop msgs

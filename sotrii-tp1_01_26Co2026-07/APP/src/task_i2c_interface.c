@@ -71,8 +71,7 @@ void open_i2c(I2C_HandleTypeDef *h_i2c_device, i2c_mode_hal_driver_t set_mode, i
 	BaseType_t ret;
 	task_i2c_dta_t *p_task_i2c_dta = &task_i2c_dta;
 
-	// _TODO Ver que el puntero de h_i2c_device no sea NULL
-
+	configASSERT(NULL != h_i2c_device);
 	p_task_i2c_dta->device_id = h_i2c_device;
 
 	// set modo

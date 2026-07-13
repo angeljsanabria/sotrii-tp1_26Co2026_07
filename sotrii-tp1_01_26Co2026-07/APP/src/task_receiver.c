@@ -98,8 +98,8 @@ void task_receiver(void *parameters)
 			g_read_i2c_wcet_us = cycle_counter_get_time_us();
 
 			if (rx.len > 0){
-				if (rx.buffer[0] == ADXL345_REG_POWER_CTL_SET_IN_MEASURE)
 				{
+				if (rx.buffer[0] == ADXL345_REG_POWER_CTL_SET_IN_MEASURE)
 					adxl345_data.initialized = true;
 					LOGGER_INFO("   ==> ADXL345 init OK (POWER_CTL = 0x%02X)", rx.buffer[0]);
 				}

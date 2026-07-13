@@ -71,6 +71,8 @@ void open_i2c(I2C_HandleTypeDef *h_i2c_device, i2c_mode_hal_driver_t set_mode, i
 	BaseType_t ret;
 	task_i2c_dta_t *p_task_i2c_dta = &task_i2c_dta;
 
+	// _TODO Ver que el puntero de h_i2c_device no sea NULL
+
 	p_task_i2c_dta->device_id = h_i2c_device;
 
 	// set modo
@@ -177,7 +179,7 @@ void read_i2c(I2C_HandleTypeDef *h_i2c_device, task_i2c_tx_rx_dta_t *rx_data)
 		{
 			xQueueSend(p_task_i2c_dta->queue_rx, rx_data, portMAX_DELAY);
 			xSemaphoreTake(p_task_i2c_dta->sem_sync_rx_done, portMAX_DELAY);
-			(void)memcpy(rx_data->buffer, p_task_i2c_dta->last_rx.buffer, rx_data->len);
+			memcpy(rx_data->buffer, p_task_i2c_dta->last_rx.buffer, rx_data->len);
 		}
 		else{
 			LOGGER_INFO("I2C Patron error");

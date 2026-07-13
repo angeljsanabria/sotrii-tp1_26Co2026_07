@@ -41,6 +41,7 @@ typedef struct {
     int16_t  y;
     int16_t  z;
 } adxl345_axes_t;
+
 typedef struct {
     uint16_t        i2c_addr;
     bool            initialized;

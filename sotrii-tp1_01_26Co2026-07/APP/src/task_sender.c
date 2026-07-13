@@ -70,13 +70,14 @@ void task_sender(void *parameters)
 	/*  Declare & Initialize Task Function variables */
 	g_task_sender_cnt = G_TASK_SENDER_CNT_INI;
 
+	// _TODO Bajar la prioridad para igualar a receiver
 	/* Serial LCD I2C Module–PCF8574  -> DEPRECATED 
 	 * No tengo ese IC -> Se usa el acelerometro digital de 3 ejes (X, Y, Z)
 	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
 	 * https://www.ti.com/product/PCF8574
  	 * dev_address = (address base | jumper less address)
 	 * -------------------------------------------------------------------------------------
-	 * Acelerometro digital de 3 ejes (X, Y, Z)
+	 * ADXL345 Acelerometro digital de 3 ejes (X, Y, Z)
 	 * Link: https://www.analog.com/media/en/technical-documentation/data-sheets/adxl345.pdf
 	 * Funcionamiento simple:
 	 * Configurar el registro de Power CTL en:
@@ -118,9 +119,6 @@ void task_sender(void *parameters)
 			tx.buffer[1] = ADXL345_REG_POWER_CTL_SET_IN_MEASURE;
 			write_i2c(&hi2c1, &tx);
 			xSemaphoreGive(h_sem_adxl_init_write_done);
-		}
-		else{
-
 		}
 
 

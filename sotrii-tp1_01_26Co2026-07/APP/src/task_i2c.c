@@ -83,16 +83,11 @@ void task_i2c_tx(void *parameters)
 
 	task_i2c_dta_t *p_task_i2c_tx_dta = (task_i2c_dta_t *)parameters;	
 
-	/* Serial LCD I2C Module–PCF8574
-	 * https://alselectro.wordpress.com/2016/05/12/serial-lcd-i2c-module-pcf8574/
-	 * https://www.ti.com/product/PCF8574
- 	 * i2c1_tx_address_rd_wr = ((address base | jumper less address) << 1) | /write
- 	 */
 
 	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
 	LOGGER_INFO("%s is running - Tick [mS] = %3d", pcTaskGetName(NULL), (int)xTaskGetTickCount());
-
+	HAL_StatusTypeDef ret = HAL_ERROR;
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
 	{
@@ -107,8 +102,12 @@ void task_i2c_tx(void *parameters)
 
 
 		if(p_task_i2c_tx_dta->mode_use == I2C_MODE_POLLING){
-			HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.buffer[0], task_i2c_tx_dta.len, HAL_MAX_DELAY);
-			// Puedo ver el HAL_OK para ver si doy el semaforo o no,.
+			ret = HAL_I2C_Master_Transmit(p_task_i2c_tx_dta->device_id, (task_i2c_tx_dta.address << 1), &task_i2c_tx_dta.buffer[0], task_i2c_tx_dta.len, HAL_MAX_DELAY);
+			// Puedo ver el HAL_OK para ver si doy el semaforo o no.
+			if(ret != HAL_OK){
+				LOGGER_INFO("Error HAL_I2C_Master_Transmit; igualmente doy el semaforo");
+			}
+
 			xSemaphoreGive(p_task_i2c_tx_dta->sem_sync_tx_done);
 		}else{
 			// los otros modos no los desarrollamos en este TP para i2c.

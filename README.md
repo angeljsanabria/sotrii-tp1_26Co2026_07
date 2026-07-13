@@ -21,7 +21,7 @@ Estoy usando una NUCELO-L4R5ZI (No consegui la sugerida para el Curso).
 
 | N° SIU | Apellidos, Nombres | Fecha | Deadline |
 | :----- | :--------------------- | :------: | :-------: | 
-| e2622 | Sanabria, Angel Javier| 17/05/2026| Semana 04 |
-| e2619 | Urian Florez, Brajhan Andres| 17/05/2026 | Semana 04 |
-| e2605 | Guirula, Lucia Agostina| 17/05/2026 | Semana 04 |
+| e2622 | Sanabria, Angel Javier| 14/07/2026| Semana 04 |
+| e2619 | Urian Florez, Brajhan Andres| 14/07/2026 | Semana 04 |
+| e2605 | Guirula, Lucia Agostina| 14/07/2026 | Semana 04 |
 

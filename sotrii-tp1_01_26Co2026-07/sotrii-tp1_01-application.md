@@ -12,7 +12,7 @@ Proyecto generado e importado. Compila en STM32CubeIDE.
 
 ## Paso 02
 
-Archivo de entrega: `sotrii-tp1_01-application.md` (este documento).
+Archivo de entrega creado.
 
 ---
 

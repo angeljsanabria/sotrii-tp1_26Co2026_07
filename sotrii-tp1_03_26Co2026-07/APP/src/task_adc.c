@@ -65,6 +65,8 @@ void task_adc_rx(void *parameters);
 const char *p_task_adc_rx_wait_250mS	= "   ==> Task ADC RX - Wait:   250mS";
 
 /********************** external data declaration ****************************/
+task_adc_dta_t task_adc_dta;
+
 uint32_t g_task_xxxx_tx_cnt;
 uint32_t g_task_xxxx_tx_runtime_us;
 

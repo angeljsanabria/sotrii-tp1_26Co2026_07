@@ -38,7 +38,8 @@ extern "C" {
 /* USER CODE BEGIN ET */
 extern TIM_HandleTypeDef htim2;
 //extern I2C_HandleTypeDef hi2c1;
-extern UART_HandleTypeDef huart2;
+//extern UART_HandleTypeDef huart2;
+extern ADC_HandleTypeDef hadc1;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

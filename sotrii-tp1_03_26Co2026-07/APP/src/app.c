@@ -74,7 +74,6 @@ uint32_t g_app_stack_overflow_cnt;
  * with other thread or to ensure mutual exclusive access to...*/
 
 /* Declare a variable of type TaskHandle_t. This is used to reference threads. */
-TaskHandle_t h_task_sender;
 TaskHandle_t h_task_receiver;
 
 /********************** external functions definition ************************/

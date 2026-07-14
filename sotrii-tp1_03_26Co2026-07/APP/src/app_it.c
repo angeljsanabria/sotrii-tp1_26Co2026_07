@@ -107,7 +107,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	{
 		xSemaphoreGiveFromISR(task_adc_dta.sem_rx_dma_done, &xHigherPriorityTaskWoken);
 
-		hal_xxxx_callback_flag = true;
+//		hal_xxxx_callback_flag = true;
 		hal_xxxx_callback_cnt++;
 		hal_xxxx_callback_runtime_us = cycle_counter_get_time_us();
 

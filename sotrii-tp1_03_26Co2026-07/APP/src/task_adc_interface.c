@@ -143,7 +143,7 @@ void read_adc(ADC_HandleTypeDef *h_adc_device)
 		{
 			if (p_task_adc_dta->pattern_use == ADC_PATTERN_LATEST_INPUT_ONLY)
 			{
-				/* LIO: no arranca HAL, el dato se obtiene con adc_get_rx_data() */
+				/* ADC_PATTERN_LATEST_INPUT_ONLY: no arranca HAL, el dato se obtiene con adc_get_rx_data() */
 			}
 			else
 			{

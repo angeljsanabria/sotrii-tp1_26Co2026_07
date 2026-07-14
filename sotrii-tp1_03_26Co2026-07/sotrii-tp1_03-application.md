@@ -92,6 +92,10 @@ Medicion con DWT, STM32CubeIDE Live Expressions (NUCLEO-L4R5ZI):
 | `read_adc()` + `adc_get_rx_data()` LIO | `g_read_adc_wcet_us` | 6 |
 
 
+### Video del tp funcionando
+[Video / archivo en Drive](https://drive.google.com/file/d/1NTRfU5eaeDBt7i3yezerCBRWDXLiqsH3/view?usp=drive_link)
+
+
 ### Muestra de logs IDE
 
 ```text

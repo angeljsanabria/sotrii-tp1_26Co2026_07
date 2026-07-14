@@ -43,54 +43,46 @@ extern "C" {
 /********************** inclusions *******************************************/
 
 /********************** macros ***********************************************/
+#define TASK_ADC_DMA_TRANSFER_LENGTH	(1ul)
 
 /********************** typedef **********************************************/
-/* ADC Driver Modes */
-typedef enum {
+typedef enum
+{
+    ADC_MODE_DMA = 0,
+    ADC_MODE_NOT_SUPPORTED,
     ADC_MODE_POLLING,
     ADC_MODE_INTERRUPT,
-    ADC_MODE_DMA,
-    ADC_MODE_NOT_SUPPORTED
 } adc_mode_hal_driver_t;
 
-/* ADC Driver Patterns */
-typedef enum {
+typedef enum
+{
+    ADC_PATTERN_LATEST_INPUT_ONLY = 0,
+    ADC_PATTERN_NOT_SUPPORTED,
     ADC_PATTERN_SYNC,
     ADC_PATTERN_ASYNC,
-    ADC_PATTERN_LATEST_INPUT_ONLY,
-    ADC_PATTERN_NOT_SUPPORTED
 } adc_pattern_driver_t;
 
-/* Structure of ADC Sample (Spooler payload) */
-typedef struct {
-    uint16_t raw_value;
-} task_adc_sample_t;
+/* Structure of Task */
+typedef struct
+{
+	ADC_HandleTypeDef *device_id;
 
-/* Structure of ADC Driver Data */
-typedef struct {
-    ADC_HandleTypeDef *device_id;
-    TaskHandle_t task_rx;
+	TaskHandle_t		task_rx;
+	QueueHandle_t		queue_rx_out;
     
-    /* LIO Queue (size 1) */
-    QueueHandle_t queue_rx_out;
-    
-    /* Static Allocation for Queue */
-    StaticQueue_t queue_rx_out_struct;
-    uint8_t queue_rx_out_storage[sizeof(task_adc_sample_t) * 1];
-    
-    /* Synchronization */
-    SemaphoreHandle_t sem_dma_cplt;
-    
-    /* DMA Destination Buffer (Static) */
-    uint16_t dma_sample;
-    
-    /* Driver Configuration */
-    adc_mode_hal_driver_t mode_use;
-    adc_pattern_driver_t pattern_use;
+	StaticQueue_t		queue_rx_out_struct;
+	uint16_t			queue_rx_out_storage;
+
+	SemaphoreHandle_t	sem_rx_dma_done;
+
+	uint16_t			dma_sample;
+	uint16_t			adc_dma_buff[TASK_ADC_DMA_TRANSFER_LENGTH];
+
+	adc_mode_hal_driver_t	mode_use;
+	adc_pattern_driver_t	pattern_use;
 } task_adc_dta_t;
 
 /********************** external data declaration ****************************/
-extern task_adc_dta_t task_adc_dta;
 
 /********************** external functions declaration ***********************/
 

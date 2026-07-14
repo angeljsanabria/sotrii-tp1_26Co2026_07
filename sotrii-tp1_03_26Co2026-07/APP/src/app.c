@@ -131,7 +131,7 @@ void app_init(void)
      * is stored in variable pxCurrentTCB */
 
     /* ADC Device Diver Init */
-    open_adc(&hadc1);
+    open_adc(&hadc1, ADC_MODE_DMA, ADC_PATTERN_LATEST_INPUT_ONLY);
 
     /* Application Interrupts Init */
 	app_it_init();

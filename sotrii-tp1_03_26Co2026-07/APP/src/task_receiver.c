@@ -61,12 +61,17 @@ const char *p_task_receiver_wait_250mS		= "   ==> Task RECEIVER - Wait:   250mS"
 
 /********************** external data declaration ****************************/
 uint32_t g_task_receiver_cnt;
+uint32_t g_read_adc_wcet_us;	/* WCET read_adc() + adc_get_rx_data() LIO: Live Expression en CubeIDE */
 
 /********************** external functions definition ************************/
 /* Task thread */
 void task_receiver(void *parameters)
 {
 	/*  Declare & Initialize Task Function variables */
+	uint16_t sample;
+
+	UNUSED(parameters);
+
 	g_task_receiver_cnt = G_TASK_RECEIVER_CNT_INI;
 
 	/* Print out: Task Initialized */
@@ -78,6 +83,13 @@ void task_receiver(void *parameters)
     {
 		/* Update Task Counter */
 		g_task_receiver_cnt++;
+
+		cycle_counter_reset();
+		read_adc(&hadc1);
+		adc_get_rx_data(&sample, TASK_RECEIVER_DEL_ZERO);
+		g_read_adc_wcet_us = cycle_counter_get_time_us();
+
+		LOGGER_INFO("   ==> Task RECEIVER - ADC: %u", sample);
 
     	/* Print out: Wait 250mS */
 		LOGGER_INFO(p_task_receiver_wait_250mS);

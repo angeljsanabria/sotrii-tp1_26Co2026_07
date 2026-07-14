@@ -44,7 +44,6 @@
 /* Application & Tasks includes */
 #include "board.h"
 #include "app.h"
-#include "app_it.h"
 #include "task_adc_attribute.h"
 
 /********************** macros and definitions *******************************/
@@ -54,19 +53,13 @@
 #define TASK_XXXX_DEL_ZERO	(pdMS_TO_TICKS(0ul))
 #define TASK_XXXX_DEL_MAX	(pdMS_TO_TICKS(250ul))
 
-/********************** internal data declaration ****************************/
-
-/********************** internal data declaration ****************************/
-
 /********************** internal functions declaration ***********************/
-void task_adc_rx(void *parameters);
+void task_adc(void *parameters);
 
 /********************** internal data definition *****************************/
 const char *p_task_adc_rx_wait_250mS	= "   ==> Task ADC RX - Wait:   250mS";
 
 /********************** external data declaration ****************************/
-task_adc_dta_t task_adc_dta;
-
 uint32_t g_task_xxxx_tx_cnt;
 uint32_t g_task_xxxx_tx_runtime_us;
 
@@ -75,35 +68,55 @@ uint32_t g_task_xxxx_rx_runtime_us;
 
 /********************** external functions definition ************************/
 /* Task ADC RX thread */
-void task_adc_rx(void *parameters)
+void task_adc(void *parameters)
 {
-	/* Prevent unused argument(s) compilation warning */
-	UNUSED(parameters);
+	HAL_StatusTypeDef ret = HAL_ERROR;
+	task_adc_dta_t *p_task_adc_dta = (task_adc_dta_t *)parameters;
+	uint16_t sample;
 
-	/*  Declare & Initialize Task Function variables */
 	g_task_xxxx_rx_cnt = G_TASK_XXXX_CNT_INI;
 	g_task_xxxx_rx_runtime_us = G_TASK_XXXX_RUNTIME_US_INI;
 
-	/* Print out: Task Initialized */
 	LOGGER_INFO(" ");
 	LOGGER_INFO("%s is running - Tick [mS] = %3d", pcTaskGetName(NULL), (int)xTaskGetTickCount());
 
-	/* As per most tasks, this task is implemented in an infinite loop. */
 	for (;;)
 	{
-		/* Update Task Counter */
 		g_task_xxxx_rx_cnt++;
 
 		cycle_counter_reset();
 
-		HAL_GPIO_TogglePin(LED_A_PORT, LED_A_PIN);
+		if (p_task_adc_dta->mode_use == ADC_MODE_DMA)
+		{
+
+			ret = HAL_ADC_Start_DMA(p_task_adc_dta->device_id,
+					(uint32_t *)p_task_adc_dta->adc_dma_buff,
+					TASK_ADC_DMA_TRANSFER_LENGTH);
+			if (ret != HAL_OK)
+			{
+				LOGGER_INFO("ADC DMA error");
+			}
+
+			xSemaphoreTake(p_task_adc_dta->sem_rx_dma_done, portMAX_DELAY);
+
+			p_task_adc_dta->dma_sample = p_task_adc_dta->adc_dma_buff[0];
+			sample = p_task_adc_dta->dma_sample;
+			xQueueOverwrite(p_task_adc_dta->queue_rx_out, &sample);
+
+			HAL_ADC_Stop_DMA(p_task_adc_dta->device_id);
+		}
+		else
+		{
+			LOGGER_INFO("ADC mode error");
+		}
 
 		g_task_xxxx_rx_runtime_us = cycle_counter_get_time_us();
 
     	/* Print out: Wait 250mS */
-		LOGGER_INFO(p_task_adc_rx_wait_250mS);
-		vTaskDelay(TASK_XXXX_DEL_MAX);
+		//LOGGER_INFO(p_task_adc_rx_wait_250mS);
+		//vTaskDelay(TASK_XXXX_DEL_MAX);
 	}
 }
 
 /********************** end of file ******************************************/
+

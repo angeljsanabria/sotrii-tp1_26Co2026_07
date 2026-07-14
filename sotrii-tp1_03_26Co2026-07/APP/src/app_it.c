@@ -35,6 +35,7 @@
 /********************** inclusions *******************************************/
 /* Project includes */
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Demo includes */
 #include "logger.h"
@@ -42,12 +43,14 @@
 
 /* Application & Tasks includes */
 #include "board.h"
+#include "task_adc_attribute.h"
 
 /********************** macros and definitions *******************************/
 #define HAL_XXXX_CALLBACK_CNT_INI			0ul
 #define HAL_XXXX_CALLBACK_RUNTIME_US_INI	0ul
 
 /********************** internal data declaration ****************************/
+extern task_adc_dta_t task_adc_dta;
 
 /********************** internal functions declaration ***********************/
 
@@ -98,13 +101,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-	// Check which version of the adc triggered this callback
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
 	if (hadc->Instance == ADC1)
 	{
+		xSemaphoreGiveFromISR(task_adc_dta.sem_rx_dma_done, &xHigherPriorityTaskWoken);
+
 		hal_xxxx_callback_flag = true;
 		hal_xxxx_callback_cnt++;
-
 		hal_xxxx_callback_runtime_us = cycle_counter_get_time_us();
+
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
 }
 

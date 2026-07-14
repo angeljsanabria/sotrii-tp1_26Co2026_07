@@ -41,6 +41,7 @@ extern "C" {
 #endif
 
 /********************** inclusions *******************************************/
+#include "task_adc_attribute.h"
 
 /********************** macros ***********************************************/
 
@@ -49,11 +50,14 @@ extern "C" {
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
-extern void open_adc(ADC_HandleTypeDef *h_adc_device);
+extern void open_adc(ADC_HandleTypeDef *h_adc_device, adc_mode_hal_driver_t set_mode,
+		adc_pattern_driver_t set_pattern);
 extern void release_adc(ADC_HandleTypeDef *h_adc_device);
 
 extern void write_adc(ADC_HandleTypeDef *h_adc_device);
 extern void read_adc(ADC_HandleTypeDef *h_adc_device);
+
+extern BaseType_t adc_get_rx_data(uint16_t *sample, TickType_t ticks_to_wait);
 
 extern void ioctl_adc(ADC_HandleTypeDef *h_adc_device);
 
